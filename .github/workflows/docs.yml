@@ -47,7 +47,7 @@ jobs:
       - name: Install deps
         run: cargo binstall cargo-tarpaulin trunk -y
       - name: tests (workspace)
-        run:  cargo tarpaulin --exclude-files */bin/* --target-dir=target/tarpaulin --skip-clean --out lcov --lib -- --test-threads=1
+        run:  cargo tarpaulin --engine llvm --follow-exec --exclude-files */bin/* --target-dir=target/tarpaulin --skip-clean --coveralls ${{ secrets.COVERALLS_TOKEN }} --lib -- --test-threads=1
   docs:
     name: Build Documentation
     runs-on: ubuntu-latest
