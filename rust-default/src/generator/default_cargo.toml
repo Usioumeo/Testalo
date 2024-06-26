@@ -1,0 +1,10 @@
+[package]
+name = "execution_test"
+version = "0.1.0"
+edition = "2021"
+
+[profile.dev]
+lto="off"
+incremental = false
+opt-level = 0
+debug =  false

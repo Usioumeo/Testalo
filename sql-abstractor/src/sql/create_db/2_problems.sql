@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS problems(
+	name VARCHAR(255) PRIMARY KEY,
+	ty VARCHAR(255),
+    source TEXT NOT NULL
+);

@@ -1,0 +1,18 @@
+[package]
+name = "backend"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rocket = {version="0.5.0", features = ["json"]}
+rand = "0.8"
+thiserror="1.0"
+chrono="0.4"
+reqwest={version = "0.12", features=["cookies"]}
+
+orchestrator ={path="../orchestrator"}
+rust-default = {path="../rust-default"}
+sql-abstractor = {path="../sql-abstractor"}
+#tokio = {version="1.0", features = ["runtime-tokio"]}

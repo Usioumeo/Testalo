@@ -1,0 +1,86 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - main
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+jobs:
+  tests:
+    name: ci-testing
+    runs-on: ubuntu-latest
+    # Service containers to run with `container-job`
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres
+        # Provide the password for postgres
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: thesis
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - uses: cargo-bins/cargo-binstall@main
+      - name: Install Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          rustflags: ""
+          toolchain: nightly
+      - name: Install deps
+        run: cargo binstall cargo-tarpaulin trunk -y
+      - name: tests (workspace)
+        run:  cargo tarpaulin --exclude-files */bin/* --target-dir=target/tarpaulin --skip-clean --out lcov --lib -- --test-threads=1
+  docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          rustflags: ""
+          toolchain: stable
+          components: rust-src
+      - uses: cargo-bins/cargo-binstall@main
+      - name: Install deps
+        run: cargo binstall cargo-tarpaulin trunk -y
+      - name: Build documentation (workspace)
+        run: cargo doc --no-deps
+      - name: remove lock
+        run: rm  target/doc/.lock
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./target/doc
+
+  # Deployment job
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: [tests, docs]
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

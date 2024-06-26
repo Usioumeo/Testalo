@@ -1,0 +1,2 @@
+sudo docker rm -f local_pg && sudo docker run  --name local_pg -e POSTGRES_PASSWORD=test  -e POSTGRES_DB=thesis -p 5432:5432 -d postgres
+cargo watch --ignore 'lcov.info' -s "cargo tarpaulin --exclude-files */bin/* --target-dir=target/tarpaulin --skip-clean --out lcov --lib -- --test-threads=1"

@@ -1,0 +1,20 @@
+[package]
+name = "student_delivery"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rust-default ={path="../rust-default"}
+orchestrator ={path="../orchestrator"}
+tokio = "1.36"
+serde = "1.0"
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+
