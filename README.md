@@ -5,7 +5,7 @@
 
 
 The project aims to help teachers to provide better learning experiences to students.
-In particular, its modular approach permits everyone to extend it easily and integrate others' code with a one-liner.
+In particular, its modular approach allows everyone to extend it easily and integrate others' code with a one-liner.
 The orchestrator crate is the default crate in this repository, and its documentation is readable [here](https://usioumeo.github.io/Testalo/orchestrator/).
 Then, we developed different plugins:
 - Backend: starts a rocket backend serving a generic frontend. See [Documentation](https://usioumeo.github.io/Testalo/backend/)
