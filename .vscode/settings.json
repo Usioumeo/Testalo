@@ -3,7 +3,6 @@
         "./student_delivery/Cargo.toml",
         "./rust-default/Cargo.toml",
         "./frontend/Cargo.toml",
-        "./procedural-macros/Cargo.toml",
     ],
     "rust-analyzer.showUnlinkedFileNotification": false
 }

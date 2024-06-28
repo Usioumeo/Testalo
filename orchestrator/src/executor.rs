@@ -47,7 +47,7 @@ macro_rules! GenerateState {
 
         #[test]
         fn test_if_all_are_implementing_executor_state(){
-            
+
             $(check::<$cur>();)+
         }
         $(

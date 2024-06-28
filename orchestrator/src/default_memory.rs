@@ -104,11 +104,14 @@ impl StatelessMemory for DefaultMemory {
             Err(Error::Unauthoraized)?
         }
         let mut user = user.clone().transmute();
-        user.logged_in_time=Some(Local::now().to_utc());
-        user.logged_in_token = Some( new_token());
+        user.logged_in_time = Some(Local::now().to_utc());
+        user.logged_in_token = Some(new_token());
         let mut binding = self.inner.lock().await;
         let inner = binding.get_mut();
-        let _ = inner.users.insert(user.username.clone(), user.clone().transmute()).unwrap();
+        let _ = inner
+            .users
+            .insert(user.username.clone(), user.clone().transmute())
+            .unwrap();
         Ok(user)
     }
 
@@ -133,7 +136,6 @@ impl StatelessMemory for DefaultMemory {
         &self,
         token: &str,
     ) -> Result<User<Authenticated>, Box<dyn StdError>> {
-        
         let mut binding = self.inner.lock().await;
         let inner = binding.get_mut();
         //let token = token.to_string();

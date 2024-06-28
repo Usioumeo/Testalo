@@ -1,19 +1,22 @@
-use orchestrator::{default_memory::DefaultMemory, prelude::*, test::{DefaultTest, DummyExercise, TestInterface}, GenerateState};
+use orchestrator::{
+    default_memory::DefaultMemory,
+    prelude::*,
+    test::{DefaultTest, DummyExercise, TestInterface},
+    GenerateState,
+};
 use reqwest::Client;
 use rocket::async_test;
 use std::error::Error;
 
 use crate::WebServer;
-struct BackendTest{
+struct BackendTest {
     url: String,
-    client:Client,
+    client: Client,
 }
-impl BackendTest{
-    fn new(url: &str)->Self{
-        let client = Client::builder()
-                .cookie_store(true)
-                .build().unwrap();
-        Self{
+impl BackendTest {
+    fn new(url: &str) -> Self {
+        let client = Client::builder().cookie_store(true).build().unwrap();
+        Self {
             url: url.to_string(),
             client,
         }
@@ -24,25 +27,27 @@ impl BackendTest{
 impl TestInterface for BackendTest {
     async fn register(&mut self, username: &str, password: &str) {
         let params = [("username", username), ("password", password)];
-        let res = self.client.post(&format!("{}/register", self.url))
+        let res = self
+            .client
+            .post(&format!("{}/register", self.url))
             .form(&params)
             .send()
-            .await.unwrap();
+            .await
+            .unwrap();
         assert!(res.status().is_success())
     }
 
-    async fn login(
-        &mut self,
-        username: &str,
-        password: &str,
-    ) -> Result<(), Box<dyn Error>> {
+    async fn login(&mut self, username: &str, password: &str) -> Result<(), Box<dyn Error>> {
         let params = [("username", username), ("password", password)];
-        let res = self.client.post(&format!("{}/login", self.url))
+        let res = self
+            .client
+            .post(&format!("{}/login", self.url))
             .form(&params)
             .send()
-            .await.unwrap();
+            .await
+            .unwrap();
         res.error_for_status_ref()?;
-        
+
         Ok(())
     }
 
@@ -52,16 +57,19 @@ impl TestInterface for BackendTest {
         source: String,
     ) -> Result<ExerciseResult, Box<dyn Error + Send + Sync + 'static>> {
         let params = [("problem", problem), ("source", source)];
-        let res = self.client.post(&format!("{}/submit", self.url))
+        let res = self
+            .client
+            .post(&format!("{}/submit", self.url))
             .form(&params)
             .send()
-            .await.unwrap();
+            .await
+            .unwrap();
         res.error_for_status_ref()?;
         let ret = res.text().await?;
         let ex: ExerciseResult = serde_json::from_str(&ret)?;
         Ok(ex)
     }
-    async fn list_exercise(&mut self)->Result<Vec<String>, Box<dyn Error + 'static>>{
+    async fn list_exercise(&mut self) -> Result<Vec<String>, Box<dyn Error + 'static>> {
         let body = reqwest::get(&format!("{}/list_problems", self.url))
             .await?
             .text()

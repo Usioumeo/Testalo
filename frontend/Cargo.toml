@@ -24,12 +24,11 @@ syn = {version="2.0", features = ["parsing", "full"]}
 prettyplease = "0.2"
 proc-macro2={version ="1.0.81", features=["span-locations"]}
 serde = {version = "1.0", features = []}
-yew-router="0.18"
+#yew-router="0.18"
 strum = {version="0.26", features = ["std"]}
-reqwest = {version ="0.12"}#, "multipart"
+reqwest = {version ="0.12"}
 
-#pollster = "0.3"
-#reqwest-wasm = {version="0.11.16", features = ["blocking"]}
+
 ehttp = {version="0.5.0", features = ["multipart"]}
 console_log = "1.0.0"
 log = "0.4"

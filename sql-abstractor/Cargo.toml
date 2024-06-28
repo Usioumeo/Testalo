@@ -13,4 +13,3 @@ tokio = "1.0"
 rand = "0.8"
 orchestrator = {path="../orchestrator"}
 async-trait = "0.1"
-dyn-clone = "1.0"

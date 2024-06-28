@@ -36,19 +36,19 @@ async fn add_source(
 ) -> Result<ExerciseResult, Box<dyn Error + Send + Sync>> {
     let mut d = ExerciseResult::default();
     use crate::executor_trait::CompilationResult::*;
-    let t1 = TestResult{
-
+    let t1 = TestResult {
         compiled: Built,
         runned: RunResult::Ok,
-        points_given: 1.0 };
-    d.tests.insert("test1".to_string(), t1 );
+        points_given: 1.0,
+    };
+    d.tests.insert("test1".to_string(), t1);
 
-
-    let t2 = TestResult{
+    let t2 = TestResult {
         compiled: Built,
         runned: RunResult::Ok,
-        points_given: 1.0 };
-    d.tests.insert("test2".to_string(), t2 );
+        points_given: 1.0,
+    };
+    d.tests.insert("test2".to_string(), t2);
 
     Ok(d)
 }
@@ -88,25 +88,21 @@ where
 #[async_trait]
 pub trait TestInterface: Send + Sync {
     async fn register(&mut self, username: &str, password: &str);
-    async fn login(
-        &mut self,
-        name: &str,
-        password: &str,
-    ) -> Result<(), Box<dyn Error>>;
+    async fn login(&mut self, name: &str, password: &str) -> Result<(), Box<dyn Error>>;
     async fn submit(
         &mut self,
         exercise: String,
         code: String,
     ) -> Result<ExerciseResult, Box<dyn Error + Send + Sync + 'static>>;
-    async fn list_exercise(&mut self)->Result<Vec<String>, Box<dyn Error + 'static>>;
+    async fn list_exercise(&mut self) -> Result<Vec<String>, Box<dyn Error + 'static>>;
 }
 
-pub struct DefaultInterface<S: ExecutorGlobalState>{
+pub struct DefaultInterface<S: ExecutorGlobalState> {
     o: OrchestratorReference<S>,
     user: Option<User<Authenticated>>,
 }
-impl<S: ExecutorGlobalState>  DefaultInterface<S> {
-    fn new(o: OrchestratorReference<S>)->Box<Self>{
+impl<S: ExecutorGlobalState> DefaultInterface<S> {
+    fn new(o: OrchestratorReference<S>) -> Box<Self> {
         Box::new(Self { o, user: None })
     }
 }
@@ -117,11 +113,7 @@ impl<S: ExecutorGlobalState> TestInterface for DefaultInterface<S> {
         self.o.memory().register(username, password).await.unwrap();
     }
 
-    async fn login(
-        &mut self,
-        username: &str,
-        password: &str,
-    ) -> Result<(), Box<dyn Error>> {
+    async fn login(&mut self, username: &str, password: &str) -> Result<(), Box<dyn Error>> {
         let u = self.o.memory().login(username, password).await?;
         self.user = Some(u);
         Ok(())
@@ -132,9 +124,15 @@ impl<S: ExecutorGlobalState> TestInterface for DefaultInterface<S> {
         exercise: String,
         code: String,
     ) -> Result<ExerciseResult, Box<dyn Error + Send + Sync + 'static>> {
-        self.o.process_exercise(exercise, code, self.user.clone().ok_or("Not Authenticated")?).await
+        self.o
+            .process_exercise(
+                exercise,
+                code,
+                self.user.clone().ok_or("Not Authenticated")?,
+            )
+            .await
     }
-    async fn list_exercise(&mut self)->Result<Vec<String>, Box<dyn Error + 'static>>{
+    async fn list_exercise(&mut self) -> Result<Vec<String>, Box<dyn Error + 'static>> {
         self.o.memory().list_exercise_names().await
     }
 }
@@ -190,7 +188,11 @@ where
         // this is needed or the panics wouldn't work
         override_panic();
 
-        let mut interface = if let Some(x) = self.t { x } else { DefaultInterface::new(o) };
+        let mut interface = if let Some(x) = self.t {
+            x
+        } else {
+            DefaultInterface::new(o)
+        };
         //fail login on purpose
         let name = format!("Test_{}", OsRng.next_u32());
         let name = name.as_str();
@@ -201,9 +203,7 @@ where
         interface.login(name, "mondo").await.unwrap();
 
         //submit an exercise that does not exist:
-        let x = interface
-            .submit(name.to_string(), String::default())
-            .await;
+        let x = interface.submit(name.to_string(), String::default()).await;
         assert!(
             x.is_err(),
             "When call an unexisting exercise it doesn't fail"
@@ -226,9 +226,9 @@ where
             let x = interface.submit(name, source).await;
             assert!(x.is_ok(), "Unexpected Error: {}", x.unwrap_err());
 
-            assert_eq!( interface.list_exercise().await.unwrap().len(), 2);
-        }else{
-            assert_eq!( interface.list_exercise().await.unwrap().len(), 1);
+            assert_eq!(interface.list_exercise().await.unwrap().len(), 2);
+        } else {
+            assert_eq!(interface.list_exercise().await.unwrap().len(), 1);
         }
 
         //x.is_ok();
