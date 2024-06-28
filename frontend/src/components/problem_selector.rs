@@ -25,7 +25,7 @@ pub fn ProblemSelector(prop: &ProblemSelectorProperties) -> Html {
             let request = client.get(local.join("/list_problems").unwrap()).build().map_err(|x| x.to_string())?;
             let val = client.execute(request).await.map_err(|x| x.to_string())?;
             let val: Vec<String>  = serde_json::from_str(&val.text().await.map_err(|x| x.to_string())?).map_err(|x| x.to_string())?;
-            return Ok(val);
+            Ok(val)
             
         }, UseAsyncOptions::enable_auto())
     };
@@ -34,7 +34,7 @@ pub fn ProblemSelector(prop: &ProblemSelectorProperties) -> Html {
     html!(
         <SimpleSelect<String>
             placeholder="Pick a value"
-            selected={prop.selected.as_ref().map(|x| x.clone())}
+            selected={prop.selected.clone()}
             entries={get_problems.data.iter().flatten().cloned().collect::<Vec<String>>()}
             onselect={prop.onselect.clone()}
         />
