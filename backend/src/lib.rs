@@ -11,7 +11,7 @@ mod problems;
 mod test;
 /// Return the index file as a Rocket NamedFile
 async fn get_index() -> Result<NamedFile, NotFound<String>> {
-    NamedFile::open("../frontend/dist/index.html")
+    NamedFile::open("./frontend/dist/index.html")
         .await
         .map_err(|e| NotFound(e.to_string()))
 }
@@ -35,7 +35,7 @@ pub async fn run_server<S: ExecutorGlobalState>(o: OrchestratorReference<S>) {
         .mount("/", routes![index, fallback])
         .mount("/", auth::routes())
         .mount("/", problems::routes())
-        .mount("/static", FileServer::from("../frontend/dist"))
+        .mount("/static", FileServer::from("./frontend/dist"))
         .launch()
         .await;
 }

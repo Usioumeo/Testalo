@@ -2,7 +2,7 @@
     "rust-analyzer.linkedProjects": [
         "./student_delivery/Cargo.toml",
         "./rust-default/Cargo.toml",
-        "./frontend/Cargo.toml",
+        "./backend/frontend/Cargo.toml",
     ],
     "rust-analyzer.showUnlinkedFileNotification": false
 }

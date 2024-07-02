@@ -2,4 +2,4 @@
 members = ["orchestrator", "rust-default", "backend", "sql-abstractor", "load-test", ]
 
 resolver="2"
-exclude = ["execution_test",  "student_delivery", "frontend", "procedural-macros"]
+exclude = ["execution_test",  "student_delivery", "backend/frontend", "procedural-macros"]
