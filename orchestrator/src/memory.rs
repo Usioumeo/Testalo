@@ -113,13 +113,14 @@ pub trait StatelessMemory: Sync + Send {
 }
 #[async_trait]
 pub trait StateMemory<S: ExecutorGlobalState> {
+    /// used to enable a particular executor
     async fn enable_executor(
         &self,
         input: &S,
         output: &S,
         data: String,
     ) -> Result<(), Box<dyn Error + Send + Sync + 'static>>;
-
+    /// from a particular state, which executor will be triggered? in which order?
     async fn get_execution_plan(
         &self,
         input: &S,

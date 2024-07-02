@@ -1,7 +1,6 @@
 use orchestrator::{
     default_memory::DefaultMemory,
     prelude::*,
-    test::TestInterface,
     GenerateState,
 };
 use reqwest::Client;

@@ -1,3 +1,5 @@
+//! In this module we defined the DefaultMemory, and some helper function.
+//! This implementation must be taken as an example
 use crate::prelude::*;
 
 use async_trait::async_trait;
@@ -33,18 +35,27 @@ pub struct DefaultMemory {
 }
 
 #[derive(thiserror::Error, Debug)]
+/// All errors that can be provided by this implementation
 pub enum Error {
-    #[error("already present")]
+    /// if something is already present:
+    #[error("Already present")]
     AlreadyPresent,
-    #[error("not found")]
+
+    /// if something is not found
+    #[error("Not found")]
     NotFound,
+
+    /// if it is not authorized ()
     #[error("unauthorized")]
     Unauthoraized,
+
+    /// if by activating an executor a cycle is detected
     #[error("cycle detected")]
     CycleDetected,
 }
 
 impl DefaultMemory {
+    /// Generates a new DefaultMemory
     pub fn init<S: ExecutorGlobalState>() -> Box<dyn Memory<S>> {
         Box::new(Self {
             inner: Mutex::new(RefCell::new(InnerMemory {
@@ -285,6 +296,8 @@ impl<S: ExecutorGlobalState> StateMemory<S> for DefaultMemory {
         Ok((ty, source.clone()))
     }
 }
+
+/// helper function used to check if there are cycles. It is public in order to be used by other memory implementations.
 
 pub fn has_cycles(vertex: &HashMap<String, String>) -> bool {
     let nodes: Vec<&String> = vertex

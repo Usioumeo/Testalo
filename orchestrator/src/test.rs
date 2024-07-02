@@ -1,9 +1,11 @@
+//! This module contains some unit test for this crate.
+//! Other than that contains an abstraction to have modularized test for plugins and extensions.
+//! 
 use std::{error::Error, sync::Arc};
 
 use async_trait::async_trait;
 use rand::{rngs::OsRng, RngCore};
 use tokio::sync::Notify;
-
 use crate::{
     executor::{AddExecutor, ExecutorGlobalState},
     executor_trait::{ExerciseDef, ExerciseResult, RunResult, TestResult},
@@ -12,6 +14,7 @@ use crate::{
     plugin::Plugin,
 };
 
+/// This is a dummy exercise, and is used in testing, and should not be used outside tests
 #[derive(Clone, Default)]
 pub struct DummyExercise {}
 impl ExerciseDef for DummyExercise {
@@ -27,9 +30,11 @@ impl ExerciseDef for DummyExercise {
         Vec::new()
     }
 }
+/// Generates DummyExercise, it ignores the string input
 async fn gen_dummy(_: String) -> Result<DummyExercise, Box<dyn Error + Send + Sync>> {
     Ok(DummyExercise {})
 }
+/// add some DummyExercise with different names
 async fn add_source(
     _: DummyExercise,
     _: String,
@@ -52,6 +57,8 @@ async fn add_source(
 
     Ok(d)
 }
+/// This plugin is used to register DummyExercises.
+/// It should be used only in tests
 pub struct DummyExercisePlugin;
 
 impl<S> Plugin<S> for DummyExercisePlugin
@@ -86,22 +93,32 @@ where
 }
 
 #[async_trait]
+/// TestInterface, it describes how to connect to the orchestrator in order to execute exercises.
+/// Normally DefaultInterface is enough for most cases
 pub trait TestInterface: Send + Sync {
+    /// register a new user, it takes username and password
     async fn register(&mut self, username: &str, password: &str);
+
+    /// login the user with the provided username and password
     async fn login(&mut self, name: &str, password: &str) -> Result<(), Box<dyn Error>>;
+    
+    /// submit an exercise
     async fn submit(
         &mut self,
         exercise: String,
         code: String,
     ) -> Result<ExerciseResult, Box<dyn Error + Send + Sync + 'static>>;
+    /// list all available exercises
     async fn list_exercise(&mut self) -> Result<Vec<String>, Box<dyn Error + 'static>>;
 }
 
-pub struct DefaultInterface<S: ExecutorGlobalState> {
+/// The Default Interface, it connects with an OrchestratorReference (taken as every Plugin does).
+struct DefaultInterface<S: ExecutorGlobalState> {
     o: OrchestratorReference<S>,
     user: Option<User<Authenticated>>,
 }
 impl<S: ExecutorGlobalState> DefaultInterface<S> {
+
     fn new(o: OrchestratorReference<S>) -> Box<Self> {
         Box::new(Self { o, user: None })
     }
@@ -149,20 +166,24 @@ pub struct DefaultTest {
     es: Option<(String, String)>,
 }
 impl DefaultTest {
+    /// create a new Test suite, which connects to the orchestrator with the provided TestInterface
     pub fn new(t: impl TestInterface + 'static) -> Self {
         Self {
             t: Some(Box::new(t)),
             es: None,
         }
     }
+    /// this create a new DefaultTest with DefaultTestInterface
     pub fn new_default() -> Self {
         Self { t: None, es: None }
     }
+    /// Use this if you want to test an additional exercise called "name" with the source "code"
     pub fn set_exercise(&mut self, name: String, code: String) {
         self.es = Some((name, code));
     }
 }
 
+/// private function used to crash tokio when this executor panics
 fn override_panic() {
     let orig_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |panic_info| {

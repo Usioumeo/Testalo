@@ -1,13 +1,16 @@
+//! This library implement a memory abstraction (from the Orchestrator crate)
+//! 
+//! It connects to a PosgreSQL Database, and handle the creation of all the necessary tables.
+//! (See the example for an example)
 use helpers::{add_test_result, Enabled, Problem, UserWrapper};
 use orchestrator::default_memory::{has_cycles, new_token};
 use orchestrator::executor::ExecutorGlobalState;
-use orchestrator::prelude::ExerciseResult;
+use orchestrator::prelude::*;
 use std::any::TypeId;
 use std::collections::HashMap;
 use std::error::Error as StdError;
 
 use async_trait::async_trait;
-use orchestrator::memory::*;
 use rand::thread_rng;
 use scrypt::password_hash::PasswordHasher;
 use scrypt::{
@@ -18,6 +21,7 @@ use sqlx::{query, query_as, Pool};
 use tokio::task::{spawn_blocking, JoinError};
 
 
+
 /// Private module
 /// 
 /// It contains some helpers useful in this implementation, but that should not be acessed directly.
@@ -25,23 +29,37 @@ use tokio::task::{spawn_blocking, JoinError};
 mod helpers;
 
 #[cfg(test)]
+/// test module, contains all tests
 mod test;
 
 #[derive(thiserror::Error, Debug)]
 /// All possible error variants from this crate
 pub enum Error {
+    ///generic error as string
     #[error("string")]
     String(String),
+    
+    /// Hash Error from scrypt
     #[error("Hash Error {0}")]
     Hash(#[from] scrypt::password_hash::Error),
+
+    /// Generic SQLX Error
     #[error("Sqlx Error {0}")]
     Sqlx(#[from] sqlx::Error),
+    
+    /// Join Error from tokio
     #[error("Join Error {0}")]
     TokioJoin(#[from] JoinError),
+
+    /// Unauthorized
     #[error("Unauthoraized")]
     Unauthoraized,
+
+    /// Already present in memory
     #[error("Already present")]
     AlreadyPresent,
+
+    /// Not Found
     #[error("Not found")]
     NotFound,
 }
@@ -72,11 +90,12 @@ pub enum Error {
 /// # );
 ///```
 pub struct Postgres {
+    /// inner type, it is a Pool from sqlx (Postgres version)
     pool: Pool<sqlx::Postgres>,
 }
 
 
-
+/// implement some initialization
 impl Postgres {
     /// initialize connector
     /// It could be used multiple times without loosing any data.
@@ -130,8 +149,8 @@ impl Postgres {
     }
 }
 #[async_trait]
+/// implementation of the StatelessMemory trait
 impl StatelessMemory for Postgres {
-    /// register user inside db
     async fn register(
         &self,
         username: &str,
@@ -289,6 +308,7 @@ impl StatelessMemory for Postgres {
 }
 
 #[async_trait]
+/// state memory implementation
 impl<S: ExecutorGlobalState> StateMemory<S> for Postgres {
     async fn enable_executor(
         &self,
@@ -342,7 +362,6 @@ impl<S: ExecutorGlobalState> StateMemory<S> for Postgres {
         Ok(ret)
     }
 
-    /// add an exercise to memory
     async fn add_exercise(
         &self,
         name: String,
