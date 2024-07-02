@@ -1,6 +1,5 @@
 use orchestrator::{
     prelude::*,
-    test::{DefaultTest, DummyExercise},
     GenerateState,
 };
 

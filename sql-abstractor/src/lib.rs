@@ -1,11 +1,10 @@
-use helpers::add_test_result;
+use helpers::{add_test_result, Enabled, Problem, UserWrapper};
 use orchestrator::default_memory::{has_cycles, new_token};
 use orchestrator::executor::ExecutorGlobalState;
 use orchestrator::prelude::ExerciseResult;
 use std::any::TypeId;
 use std::collections::HashMap;
 use std::error::Error as StdError;
-use std::marker::PhantomData;
 
 use async_trait::async_trait;
 use orchestrator::memory::*;
@@ -15,17 +14,21 @@ use scrypt::{
     password_hash::{PasswordHash, PasswordVerifier, SaltString},
     Params, Scrypt,
 };
-use sqlx::prelude::FromRow;
-use sqlx::types::chrono::{DateTime, Utc};
 use sqlx::{query, query_as, Pool};
 use tokio::task::{spawn_blocking, JoinError};
+
+
+/// Private module
+/// 
+/// It contains some helpers useful in this implementation, but that should not be acessed directly.
+/// 
 mod helpers;
 
 #[cfg(test)]
 mod test;
 
 #[derive(thiserror::Error, Debug)]
-/// All possible error variants from this implementation
+/// All possible error variants from this crate
 pub enum Error {
     #[error("string")]
     String(String),
@@ -46,50 +49,39 @@ pub enum Error {
 ///Postgress implementation.
 ///
 /// It's a wrapper around sqlx::postgres
+/// 
+/// # Examples
+/// It implemeents orchestrator memory abstraction, that means that could be used as:
+/// ```
+/// use sql_abstractor::Postgres;
+/// use orchestrator::prelude::*;
+/// # tokio_test::block_on(
+///  
+///  #   async {
+/// GenerateState!(ExerciseResult, DummyExercise);
+/// let m = Box::new(
+///     Postgres::clean_init("postgresql://postgres:test@localhost:5432/thesis")
+///     .await
+///     .unwrap(),
+/// );
+/// let mut o: Orchestrator<State> = Orchestrator::new(1, m);
+/// #       let def = DefaultTest::new_default();
+/// #       o.add_plugin(def).await.unwrap();
+/// o.run().await;
+/// #    }
+/// # );
+///```
 pub struct Postgres {
     pool: Pool<sqlx::Postgres>,
 }
 
-#[derive(FromRow)]
-/// Struct used to retrive/set user information:
-struct UserWrapper {
-    pub user_id: i64,
-    pub username: String,
-    pub password_hash: String,
-    pub logged_in_time: Option<DateTime<Utc>>,
-    pub logged_in_token: Option<String>,
-    pub is_admin: bool,
-}
-#[derive(FromRow)]
-struct Problem {
-    name: String,
-    ty: String,
-    source: String,
-}
 
-#[derive(FromRow)]
-struct Enabled {
-    incoming: String,
-    outgoing: String,
-    additional_data: String,
-}
-impl<S: UserState> From<UserWrapper> for User<S> {
-    fn from(value: UserWrapper) -> Self {
-        //let logged_in_time = value.logged_in_time.map(|x| x.);
-        Self {
-            ph: PhantomData,
-            user_id: value.user_id,
-            username: value.username,
-            password_hash: value.password_hash,
-            logged_in_time: value.logged_in_time,
-            logged_in_token: value.logged_in_token,
-            is_admin: value.is_admin,
-        }
-    }
-}
 
 impl Postgres {
     /// initialize connector
+    /// It could be used multiple times without loosing any data.
+    /// 
+    /// This is the correct way to obtain Self
     pub async fn init(builder: &str) -> Result<Self, Error> {
         let pool: Pool<sqlx::Postgres> = Pool::connect(builder).await?;
         //create table users (if not present)

@@ -1,17 +1,8 @@
 use orchestrator::prelude::*;
-use sqlx::{query, Pool};
-use std::error::Error;
+use sqlx::{prelude::*, query, types::chrono::{DateTime, Utc}, Pool};
+use std::{error::Error, marker::PhantomData};
 
-/*
-CREATE TABLE IF NOT EXISTS test_results(
-    test_results_id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    compiled TEXT NOT NULL,
-    runned TEXT NOT NULL,
-    points FLOAT NOT NULL,
-    refers_to BIGINT,
-    FOREIGN KEY (refers_to) REFERENCES Sumbissions(submission_id),
-); */
+/// This is an helper functions
 pub async fn add_test_result(
     pool: &Pool<sqlx::Postgres>,
     name: String,
@@ -29,4 +20,46 @@ pub async fn add_test_result(
         .execute(pool)
         .await?;
     Ok(())
+}
+
+#[derive(FromRow)]
+/// Struct used to retrive/set user information:
+pub struct UserWrapper {
+    pub user_id: i64,
+    pub username: String,
+    pub password_hash: String,
+    pub logged_in_time: Option<DateTime<Utc>>,
+    pub logged_in_token: Option<String>,
+    pub is_admin: bool,
+}
+
+impl<S: UserState> From<UserWrapper> for User<S> {
+    fn from(value: UserWrapper) -> Self {
+        //let logged_in_time = value.logged_in_time.map(|x| x.);
+        Self {
+            ph: PhantomData,
+            user_id: value.user_id,
+            username: value.username,
+            password_hash: value.password_hash,
+            logged_in_time: value.logged_in_time,
+            logged_in_token: value.logged_in_token,
+            is_admin: value.is_admin,
+        }
+    }
+}
+
+#[derive(FromRow)]
+/// Internal and private struct, used to parse incoming SQL rows
+pub struct Problem {
+    pub name: String,
+    pub ty: String,
+    pub source: String,
+}
+
+#[derive(FromRow)]
+/// Internal and private struct, used to parse incoming SQL rows
+pub struct Enabled {
+    pub incoming: String,
+    pub outgoing: String,
+    pub additional_data: String,
 }

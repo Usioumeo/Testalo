@@ -10,10 +10,6 @@ use rust_default::plugins::RustDefaultPlugin;
 // stato->stato
 // esercizio->.....->soluzione
 
-#[derive(Default, Clone)]
-struct State1;
-#[derive(Default, Clone)]
-struct State2;
 
 GenerateState!(RustExercise, RustGeneratedFiles, RustCompiled, ExerciseResult);
 

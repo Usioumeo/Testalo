@@ -1,0 +1,1 @@
+RUSTDOCFLAGS='-Z unstable-options --show-coverage' cargo doc --no-deps >doc-cov

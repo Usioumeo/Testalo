@@ -7,3 +7,4 @@ node_modules
 run_sql.sh
 Rocket.toml
 lcov.info
+doc-cov

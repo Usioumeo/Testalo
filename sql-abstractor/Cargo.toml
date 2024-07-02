@@ -13,3 +13,4 @@ tokio = "1.0"
 rand = "0.8"
 orchestrator = {path="../orchestrator"}
 async-trait = "0.1"
+tokio-test = "0.4"

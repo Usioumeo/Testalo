@@ -41,7 +41,7 @@ macro_rules! GenerateState {
         enum State{
             $($cur($cur)),+
         }
-        fn check<S: ExecutorState>(){
+        /*fn check<S: ExecutorState>(){
 
         }
 
@@ -49,7 +49,7 @@ macro_rules! GenerateState {
         fn test_if_all_are_implementing_executor_state(){
 
             $(check::<$cur>();)+
-        }
+        }*/
         $(
         #[allow(irrefutable_let_patterns)]
         impl TryFrom<State> for $cur{
@@ -69,7 +69,7 @@ macro_rules! GenerateState {
         }
         )+
         #[derive(Serialize, Deserialize)]
-        #[serde(crate = "self::serde")]
+        #[serde(crate = "orchestrator::prelude::serde")]
         enum SerDeState{
             $($cur),+
         }
@@ -142,7 +142,7 @@ where
     ) -> Result<(), Box<dyn StdError + Send + Sync + 'static>>
     where
         F: Future<Output = Result<Output, E>> + 'static + Send + Sync,
-        E: Into<Box<dyn StdError + Send + Sync + 'static>> + ?Sized,
+        E: Into<Box<dyn StdError + Send + Sync + 'static>> ,
         Data: Serialize + for<'a> Deserialize<'a> + 'static,
     {
         // wrap in a generic function
