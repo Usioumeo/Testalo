@@ -45,7 +45,7 @@ jobs:
           rustflags: ""
           toolchain: nightly
       - name: Install deps
-        run: cargo binstall cargo-tarpaulin trunk -y
+        run: cargo binstall cargo-tarpaulin trunk -y --force
       - name: tests (workspace)
         run:  cargo tarpaulin --engine llvm --follow-exec --exclude-files */bin/* --target-dir=target/tarpaulin --skip-clean --coveralls ${{ secrets.COVERALLS_TOKEN }} --lib -- --test-threads=1
   docs:
@@ -63,7 +63,7 @@ jobs:
           components: rust-src
       - uses: cargo-bins/cargo-binstall@main
       - name: Install deps
-        run: cargo binstall cargo-tarpaulin trunk -y
+        run: cargo binstall cargo-tarpaulin trunk -y --force
       - name: Build documentation (workspace)
         run: cargo doc --no-deps
       - name: remove lock
