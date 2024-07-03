@@ -1,12 +1,4 @@
-// macro that creates "serialize/deserialize action enum"
-// create_action(X, Y)
-// #[derive(Serialize, Deserialize)]
-// enum ActionStates{
-//    source
-//  x, (implies struct X)
-//  y,
-//}
-
+//! This module contains the definition of executor and States
 use std::{
     any::{Any, TypeId},
     error::Error as StdError,
@@ -21,9 +13,11 @@ use crate::prelude::{
 };
 
 /// This trait is implemented for a State managable by the orchestrator.
-/// I Strongly advise in using the provided macro to generate it
+/// It is strongly advises to using the provided macro to generate it
 pub trait ExecutorGlobalState: Clone + TryInto<ExerciseResult> + Send + Sync + 'static {
+    /// Transform the current variant in a String
     fn serialize_variant(&self) -> String;
+    /// Recover the variant from string, and returns the respective TypeId
     fn deserialize_variant(s: &str) -> Result<TypeId, Box<dyn StdError + Send + Sync + 'static>>;
 }
 
@@ -96,7 +90,7 @@ pub trait ExecutorState: Clone + Send + Sync + AsyncDefault + 'static + Any {}
 /// automatic implementation for autotrait
 impl<S: Clone + Send + Sync + 'static + AsyncDefault + Any> ExecutorState for S {}
 
-// TODO remove this trait
+/// Add Executor Trait
 pub trait AddExecutor<Input: ExecutorState, Out: ExecutorState> {
     /// method used to register an executor:
     ///
@@ -112,6 +106,7 @@ pub trait AddExecutor<Input: ExecutorState, Out: ExecutorState> {
         E: Into<Box<dyn StdError + Send + Sync>>,
         Data: Serialize + for<'a> Deserialize<'a> + 'static;
 
+    /// Function used to enable a particular executor
     fn enable_executor_typed<Data: Serialize>(
         &mut self,
         i: &Input,
@@ -120,9 +115,14 @@ pub trait AddExecutor<Input: ExecutorState, Out: ExecutorState> {
     ) -> impl Future<Output = Result<(), Error>>;
 }
 
+/// Type definition to simplify additional types:
+/// It is dynamic Future that return a state or an boxed error.
 pub type ExecutorFuture<S> = Pin<
     Box<dyn Send + Sync + Future<Output = Result<S, Box<dyn StdError + Send + Sync + 'static>>>>,
 >;
+/// Type definition to simplify additional types:
+/// An exectutor is a function that takes a source code as input and returns an ExecutorFuture.
+/// This type boesx that function.
 pub type Executor<S> = Box<dyn Send + Sync + Fn(S, String) -> ExecutorFuture<S>>;
 
 impl<S, Input, Output> AddExecutor<Input, Output> for Orchestrator<S>
@@ -195,7 +195,10 @@ where
 }
 
 #[allow(opaque_hidden_inferred_bound)]
+/// Some implementations require async in order to generate a Default object.
+/// This trait is a wrapper around standard Default trait, and extends it automatically.
 pub trait AsyncDefault {
+    /// Same function as Default::default(), but async
     fn async_default() -> impl Future<Output = Self>;
 }
 impl<T: Default> AsyncDefault for T {
@@ -205,16 +208,24 @@ impl<T: Default> AsyncDefault for T {
 }
 
 #[derive(thiserror::Error, Debug)]
+///Type that represent all error that a generic executor could trigger
 pub enum Error {
-    #[error("Generic Error")]
+    /// generic Boxed Error, It should Be used as little as possible
+    #[error("Generic Error: {0}")]
     Generic(#[from] Box<dyn StdError + Send + Sync + 'static>),
+
+    /// Not found an implementation fot that particular executor
     #[error("Implementation not found")]
     NotFound,
+
+    /// detected a cycle
     #[error("cycle detected")]
     CycleDetected,
+    /// Not found an implementation fot that particular executor
     #[error("Not a registered executor")]
     UnregisteredExecutor,
-    #[error("Json serialize Error")]
+    /// Impossible to serialize, something is wrong
+    #[error("Json serialize Error: {0}")]
     Json(#[from] serde_json::Error),
 }
 #[cfg(test)]

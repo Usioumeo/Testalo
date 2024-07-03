@@ -1,3 +1,5 @@
+//! This module contains the definition of a Plugin, and how to wrap it inside the Orchestrator
+//! 
 use std::{error::Error, future::Future, marker::PhantomData, mem, sync::Arc};
 
 use async_trait::async_trait;
@@ -13,8 +15,15 @@ use crate::prelude::*;
 ///
 /// Then there is on_add, and is executed while the plugin is getting add.
 pub trait Plugin<S: ExecutorGlobalState>: Sized + Send + Sync + 'static {
+    /// Return the name of the Plugin, used for Error creation and Debug
     fn name(&self) -> &str;
+
+    /// Return a descriptionn of the Plugin. It should contain a list of the registered and activated Executors
     fn desctiption(&self) -> &str;
+    
+    /// Function called when the Plugin is runned (at the end of the init phase).
+    /// it takes an OrchestratorReference, which permit almost complete control over the orchestrator, and a shared Notify.
+    /// This notify should get called when a Plugin request an orchestrator shutdown.
     fn run(
         self,
         o: OrchestratorReference<S>,
@@ -25,6 +34,9 @@ pub trait Plugin<S: ExecutorGlobalState>: Sized + Send + Sync + 'static {
             let _s = should_stop;
         }
     }
+    /// When the plugin gets added to the Orchestrator, this function gets called.
+    /// It gives complete control on the unrunned executor.
+    /// It should be used to register/activate executor, add other Plugins, add Exercise (discouraged)...
     fn on_add<'a>(
         &'a mut self,
         o: &'a mut Orchestrator<S>,

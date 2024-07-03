@@ -17,30 +17,43 @@ mod private {
     /// should remain private, it's needed to privatize what we doesn't want to implement outside this module
     pub trait Privatizer {}
 }
+
+/// A valid UserVariant
 pub trait UserState: Debug + Privatizer + Clone {}
 #[derive(Debug, Clone)]
+/// Admin variant, used as a type-state-machine
 pub struct Admin;
 impl Privatizer for Admin {}
 impl UserState for Admin {}
 
 #[derive(Debug, Clone)]
+/// Authenticated variant, used as a type-state-machine
 pub struct Authenticated;
 impl Privatizer for Authenticated {}
 impl UserState for Authenticated {}
 
 #[derive(Debug, Clone)]
+/// Unauthenticated variant, used as a type-state-machine
 pub struct Unauthenticated;
 impl Privatizer for Unauthenticated {}
 impl UserState for Unauthenticated {}
 
 #[derive(Debug, Clone)]
+/// An user, the variant S represent the type of user (if it is Authenticated, Admin, or Unauthenticated).
 pub struct User<S: UserState> {
+    /// Phantom data used to save the variant
     pub ph: PhantomData<S>,
+    /// Univoque identification of a user
     pub user_id: i64,
+    /// Univoque Username of a user
     pub username: String,
+    /// Hashed password
     pub password_hash: String,
+    /// When did it log-in last time?
     pub logged_in_time: Option<DateTime<Utc>>,
+    /// Which token should use to authenticate
     pub logged_in_token: Option<String>,
+    /// is an admin? Aka can connect to Admin-only parts?
     pub is_admin: bool,
 }
 
@@ -60,6 +73,7 @@ impl<S: UserState> User<S> {
 }
 
 #[async_trait]
+/// This is the trait that contains all method of the memory that does not require knowing the state
 pub trait StatelessMemory: Sync + Send {
     //USERS
 
@@ -112,6 +126,8 @@ pub trait StatelessMemory: Sync + Send {
     ) -> Result<(), Box<dyn Error + Send + Sync>>;
 }
 #[async_trait]
+/// This is the trait that contains all method of the memory that does require knowing the state.
+/// Is not always available
 pub trait StateMemory<S: ExecutorGlobalState> {
     /// used to enable a particular executor
     async fn enable_executor(
@@ -143,6 +159,7 @@ pub trait StateMemory<S: ExecutorGlobalState> {
 }
 /// auto trait that rapresent the union of stateless and state Memory
 pub trait Memory<S: ExecutorGlobalState>: StateMemory<S> + StatelessMemory {
+    /// conversion into a StatelessMemory
     fn as_stateless(&self) -> &dyn StatelessMemory;
 }
 impl<S: ExecutorGlobalState, Cur: StateMemory<S> + StatelessMemory> Memory<S> for Cur {

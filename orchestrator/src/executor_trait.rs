@@ -1,13 +1,9 @@
 /*!
-The correct construction order must be:
-ExerciseBuilder, template -> ExerciseDef<TestDefinition>
-Builder, ExerciseDef, Source -> ExerciseRunnable
-Runnable.run ->
+
 */
 
 use crate::prelude::*;
 use colored::Colorize;
-
 use std::any::Any;
 use std::cmp::Ordering;
 use std::collections::HashMap;
@@ -41,7 +37,10 @@ pub trait ExerciseDef: Sync + Send + Any {
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
+/// Results of a common Exercise. It contains a list of the results of each test.
 pub struct ExerciseResult {
+    /// list of the result of each tests:
+    /// The key is the name, and TestResult contains all other informations
     pub tests: HashMap<String, TestResult>,
 }
 impl Display for ExerciseResult {
@@ -79,9 +78,13 @@ impl Display for ExerciseResult {
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize)]
+/// Contains the results of each tests
 pub struct TestResult {
+    /// Compilation status
     pub compiled: CompilationResult,
+    /// Execution status
     pub runned: RunResult,
+    /// Points awarded
     pub points_given: f64,
 }
 impl Eq for TestResult {}
@@ -116,12 +119,13 @@ impl Display for TestResult {
     }
 }
 
-// easy enums
+
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
+/// Status of a compilation
 pub enum CompilationResult {
-    /// where is it saved?
+    /// If the compilation succeded
     Built,
-    /// which compilation error did we get?
+    /// if we get an error, the string of the error
     Error(String),
     /// not yet built
     #[default]
@@ -160,11 +164,13 @@ impl Display for CompilationResult {
     }
 }
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
+/// Status of an execution
 pub enum RunResult {
+    /// Execution completed succesfuly
     Ok,
-    /// it did not execute correctly
+    /// it did not execute correctly, the returned error is:
     Error(String),
-    /// it didn't run
+    /// not yet run
     #[default]
     NotRun,
 }

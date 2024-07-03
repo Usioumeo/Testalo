@@ -1,3 +1,4 @@
+//! This is the main module, and contains the definition of the orchestrator
 use std::{
     any::TypeId, collections::HashMap, error::Error, future::Future, marker::PhantomData, mem,
     ops::Deref, pin::Pin, sync::Arc,
@@ -8,30 +9,41 @@ use async_trait::async_trait;
 use tokio::sync::{Notify, Semaphore};
 
 #[derive(Debug, thiserror::Error)]
+/// Possible errors returned from the orchestrator
 pub enum OrchestratorError {
+    /// It was not possible to found the requested resource
     #[error("NotFound")]
     NotFound,
-
-    #[error("Failing Autentication {0}")]
+    /// Failed Authentication
+    #[error("Failing Autentication: {0}")]
     FailingAutentication(ExerciseResult),
 
-    #[error("Execution Error")]
+    /// Execution Error
+    #[error("Execution Error: {0}")]
     ExecutionError(#[from] Box<dyn Error + Send + Sync>),
 }
 
+/// which result should a complete execution return?
 pub type ResultOutput = Result<ExerciseResult, Box<dyn Error>>;
+/// wrap ResultOutput in a dynamic Future
 pub type ResultFuture = Pin<Box<dyn Send + Sync + Future<Output = ResultOutput>>>;
+
+/// Type of a dynamic Function that returns a ResultFuture. It takes as input an ExerciseDefinition and a String
 pub type Func = dyn Send + Sync + Fn(&dyn ExerciseDef, String) -> ResultFuture;
 
+/// What does an exercise generator need to return?
 pub type ExerciseGeneratorFuture<S> =
     Pin<Box<dyn Send + Sync + Future<Output = Result<S, Box<dyn Error + Send + Sync + 'static>>>>>;
-/// template, input
+/// Dyncamic function, it returns an ExerciseGeneratorFuture
 pub type ExerciseGenerator<S> = Box<dyn Send + Sync + Fn(String) -> ExerciseGeneratorFuture<S>>;
 
+/// Add user source code to the ExerciseDef
 pub type UserSrcAdder<S> = Box<dyn Send + Sync + Fn(S, String) -> ExerciseGeneratorFuture<S>>;
 
-// TODO try to relax this constraints
+/// Which error should the implementation return?
 pub type DynError = Box<dyn Error + Send + Sync>;
+
+/// The main struct, it orchestrates all plugins, executors, memory ecc...
 pub struct Orchestrator<S: ExecutorGlobalState> {
     ph: PhantomData<S>,
     memory: Box<dyn Memory<S>>,
@@ -46,7 +58,7 @@ pub struct Orchestrator<S: ExecutorGlobalState> {
 }
 
 impl<S: ExecutorGlobalState> Orchestrator<S> {
-    /// Constructor
+    /// Constructor, it takes as input the total number of permits available for execution and a Memory
     pub fn new(execution_permits: usize, memory: Box<dyn Memory<S>>) -> Self {
         Orchestrator {
             ph: PhantomData,
@@ -120,7 +132,7 @@ impl<S: ExecutorGlobalState> Orchestrator<S> {
             .await?;
         Ok(())
     }
-    //get and execute plan
+    ///get and execute plan
     pub async fn run_state(&self, mut cur: S) -> Result<S, DynError> {
         let plan = self.memory.get_execution_plan(&cur).await?;
         for (from, to, data) in plan {
@@ -179,8 +191,8 @@ impl<S: ExecutorGlobalState> Orchestrator<S> {
             (Box::new(exercise_gen), Box::new(source_add)),
         );
     }
-
-    pub async fn generate_exercise(&self, name: String, source: String) -> Result<S, DynError> {
+    /// generate an exercise from a name and a source-code
+    async fn generate_exercise(&self, name: String, source: String) -> Result<S, DynError> {
         let (ty, template) = self.memory.get_exercise(name).await?;
         let (generator, source_adder) = self.exercise_generators.get(&ty).ok_or("not found")?;
         let generated = generator(template).await?;
@@ -188,6 +200,7 @@ impl<S: ExecutorGlobalState> Orchestrator<S> {
         Ok(added)
     }
 
+    /// Adds a plugin to the orchestrator
     pub async fn add_plugin<P: Plugin<S> + 'static>(&mut self, mut p: P) -> Result<(), DynError> {
         p.on_add(self).await?;
         let to_push = Box::new(PluginStorage::new(p));
@@ -195,7 +208,7 @@ impl<S: ExecutorGlobalState> Orchestrator<S> {
         Ok(())
     }
 
-    /// runs the Orchestrator.
+    /// Runs the Orchestrator.
     pub async fn run(mut self) -> OrchestratorReference<S> {
         let mut to_run = Vec::new();
         mem::swap(&mut to_run, &mut self.plugins);
@@ -212,10 +225,12 @@ impl<S: ExecutorGlobalState> Orchestrator<S> {
         n.notified().await;
         o
     }
-
+    /// get a reference to the internal memory
     pub fn memory(&self) -> &dyn Memory<S> {
         self.memory.as_ref()
     }
+
+    /// Enables a particular executor
     pub async fn enable_executor<
         Input: ExecutorState + TryFrom<S> + Into<S>,
         Output: ExecutorState + Into<S>,
@@ -235,18 +250,60 @@ impl<S: ExecutorGlobalState> Orchestrator<S> {
     }
 }
 
-#[macro_export]
-macro_rules! compose {
-    ($function:ident, $($rest:ident),+) => {
-        move |d: Def, s: String| async move { compose!(expand $function(d, s).await , $($rest),*) }
-    };
-    (expand $inner:expr , $function:ident, $($rest:ident),*) => {
-        compose!(expand $function($inner).await, $($rest),*)
-    };
-    (expand $inner:expr, $function:ident) => {
-        $function($inner).await
-    };
+
+#[derive(Clone)]
+/// A shared reference to the orchestrator
+pub struct OrchestratorReference<S: ExecutorGlobalState> {
+    inner: Arc<Orchestrator<S>>,
 }
+impl<S: ExecutorGlobalState> Deref for OrchestratorReference<S> {
+    type Target = Orchestrator<S>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+impl<S: ExecutorGlobalState> Orchestrator<S> {
+    /// returns a reference to the orchestrator
+    pub fn as_ref(self) -> OrchestratorReference<S> {
+        OrchestratorReference {
+            inner: Arc::new(self),
+        }
+    }
+}
+#[async_trait]
+/// Reference without state
+pub trait ReferenceWithoutState: Send + Sync + 'static {
+    /// from exercise name, source string, and user authenticated
+    async fn process_exercise(
+        &self,
+        name: String,
+        s: String,
+        user: User<Authenticated>,
+    ) -> Result<ExerciseResult, DynError>;
+    /// returns a memory reference (without state)
+    fn memory(&self) -> &dyn StatelessMemory;
+    //fn deref(&self) -> &Orchestrator<impl ExecutorState>;
+}
+#[async_trait]
+impl<S: ExecutorGlobalState> ReferenceWithoutState for OrchestratorReference<S> {
+    /*fn add_plugin<P: Plugin + 'static>(&mut self, p: P) {
+        todo!()
+    }*/
+    fn memory(&self) -> &dyn StatelessMemory {
+        self.memory.as_stateless()
+    }
+
+    async fn process_exercise(
+        &self,
+        name: String,
+        s: String,
+        user: User<Authenticated>,
+    ) -> Result<ExerciseResult, DynError> {
+        Ok(self.inner.process_exercise(name, s, user).await?)
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -267,54 +324,5 @@ mod tests {
         is_sync::<&Orchestrator<State>>();
         is_send::<OrchestratorReference<State>>();
         is_sync::<OrchestratorReference<State>>();
-    }
-}
-
-#[derive(Clone)]
-pub struct OrchestratorReference<S: ExecutorGlobalState> {
-    inner: Arc<Orchestrator<S>>,
-}
-impl<S: ExecutorGlobalState> Deref for OrchestratorReference<S> {
-    type Target = Orchestrator<S>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-impl<S: ExecutorGlobalState> Orchestrator<S> {
-    pub fn as_ref(self) -> OrchestratorReference<S> {
-        OrchestratorReference {
-            inner: Arc::new(self),
-        }
-    }
-}
-#[async_trait]
-pub trait ReferenceWithoutState: Send + Sync + 'static {
-    //fn add_plugin<P: Plugin + 'static>(&mut self, p: P);
-    async fn process_exercise(
-        &self,
-        name: String,
-        s: String,
-        user: User<Authenticated>,
-    ) -> Result<ExerciseResult, DynError>;
-    fn memory(&self) -> &dyn StatelessMemory;
-    //fn deref(&self) -> &Orchestrator<impl ExecutorState>;
-}
-#[async_trait]
-impl<S: ExecutorGlobalState> ReferenceWithoutState for OrchestratorReference<S> {
-    /*fn add_plugin<P: Plugin + 'static>(&mut self, p: P) {
-        todo!()
-    }*/
-    fn memory(&self) -> &dyn StatelessMemory {
-        self.memory.as_stateless()
-    }
-
-    async fn process_exercise(
-        &self,
-        name: String,
-        s: String,
-        user: User<Authenticated>,
-    ) -> Result<ExerciseResult, DynError> {
-        Ok(self.inner.process_exercise(name, s, user).await?)
     }
 }
