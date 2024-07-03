@@ -4,10 +4,7 @@ use orchestrator::{
     GenerateState,
 };
 
-use crate::{
-    generator::{RustCompiled, RustExercise, RustGeneratedFiles},
-    plugins::RustDefaultPlugin,
-};
+use crate::*;
 
 #[tokio::test]
 async fn test_orchestrator() {

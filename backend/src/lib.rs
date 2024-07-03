@@ -1,3 +1,4 @@
+//! In this module there is the description of the WebServer
 use orchestrator::prelude::*;
 
 use rocket::fs::{FileServer, NamedFile};
@@ -40,7 +41,7 @@ pub async fn run_server<S: ExecutorGlobalState>(o: OrchestratorReference<S>) {
         .await;
 }
 
-/// plugin
+/// The WebServer Plugin, it serves a rocket webserver.
 pub struct WebServer;
 
 impl<S: ExecutorGlobalState> Plugin<S> for WebServer {
@@ -53,11 +54,9 @@ impl<S: ExecutorGlobalState> Plugin<S> for WebServer {
         In addition to that it host a static wasm frontend. (Got from Frontend crate)
         "
     }
-    /// run the plugin
     async fn run(self, o: OrchestratorReference<S>, should_stop: std::sync::Arc<Notify>) {
         let q = tokio::spawn(async { run_server(o).await });
         let _ = q.await;
         should_stop.notify_one();
-        //todo!()
     }
 }

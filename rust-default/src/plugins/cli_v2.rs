@@ -9,6 +9,7 @@ use orchestrator::prelude::*;
 use tokio::sync::Notify;
 
 #[derive(Clone)]
+/// AutoComplete struct
 struct AutoComplete {
     valid_exercises: HashSet<String>,
 }
@@ -86,14 +87,15 @@ impl StringValidator for Validator {
         })
     }
 }
+/// Plugin that implement a CLI for the orchestrator
 pub struct CLIPlugin;
 impl<S: ExecutorGlobalState> Plugin<S> for CLIPlugin {
     fn name(&self) -> &str {
-        "name"
+        "Command Line Interface Plugin"
     }
 
     fn desctiption(&self) -> &str {
-        "descritption"
+        "Interface Plugin. It Expose the inner function throught a CLI"
     }
 
     async fn run(self, o: OrchestratorReference<S>, should_stop: Arc<Notify>) {

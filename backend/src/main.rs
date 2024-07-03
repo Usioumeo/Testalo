@@ -3,10 +3,7 @@ use orchestrator::memory::StatelessMemory;
 use orchestrator::orchestrator::Orchestrator;
 use orchestrator::GenerateState;
 use rocket::tokio;
-use rust_default::{
-    generator::{RustCompiled, RustExercise, RustGeneratedFiles},
-    plugins::RustDefaultPlugin,
-};
+use rust_default::*;
 use sql_abstractor::Postgres;
 
 GenerateState!(

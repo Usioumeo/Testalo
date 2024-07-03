@@ -1,5 +1,8 @@
+//! Utility uses to perform load-test on the Backend crate.
+
 use goose::prelude::*;
 use goose_eggs::{validate_and_load_static_assets, Validate};
+/// submit an exercise
 async fn loadtest_index(user: &mut GooseUser) -> TransactionResult {
     let params = [
         ("problem", "es1"),
@@ -25,7 +28,7 @@ async fn loadtest_index(user: &mut GooseUser) -> TransactionResult {
         .unwrap();
     Ok(())
 }
-
+/// make a login to the backend, in order to submit many exercises
 async fn website_login(user: &mut GooseUser) -> TransactionResult {
     let id = user.weighted_users_index;
     let name = format!("goose_{id}");
@@ -39,6 +42,7 @@ async fn website_login(user: &mut GooseUser) -> TransactionResult {
 }
 
 #[tokio::main]
+/// Initialize and starts a GooseAttack
 async fn main() -> Result<(), GooseError> {
     GooseAttack::initialize()?
         .set_default(GooseDefault::Host, "http://localhost:8000")

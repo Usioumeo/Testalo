@@ -14,20 +14,25 @@ use tokio::{fs, process::Command};
 
 use super::RustExercise;
 
-/**
- * error that can get generated in a compilation with cargo
-*/
+
+/// Error that can get generated in a compilation with cargo
 #[derive(Debug, thiserror::Error)]
 pub enum CompileError {
+    /// From UTF8 Error
     #[error("It's not a valid utf-8 file. Got error: {0}")]
     FromUTF8Error(#[from] FromUtf8Error),
-
+    /// Input Output Error
     #[error("IoError {0}")]
     IoError(#[from] std::io::Error),
 }
 
 #[derive(Clone)]
+/// Rust Generated Files
 pub struct RustGeneratedFiles {
+    /// each files is saved in this hashmap where:
+    /// the key is the name
+    /// the parameter String is the source code generated
+    /// the f64 is how much points that test is worth
     pub files: HashMap<String, (String, f64)>,
 }
 impl AsyncDefault for RustGeneratedFiles {
@@ -39,7 +44,7 @@ impl AsyncDefault for RustGeneratedFiles {
     }
 }
 /**
- * it extracts the various error from
+    it extracts the various error from the output
 */
 pub fn parse_errors(inp: &str, tests: &mut HashMap<String, TestResult>) {
     let _: Vec<Option<()>> = inp
@@ -71,6 +76,7 @@ pub fn parse_errors(inp: &str, tests: &mut HashMap<String, TestResult>) {
         .collect();
 }
 
+/// function used to create a valid Cargo Project
 pub async fn create_cargo_project(path: &Path) -> Result<(), CompileError> {
     //TODO clean well (delete target, overwrite other files)
     if path.exists() {
@@ -86,6 +92,7 @@ pub async fn create_cargo_project(path: &Path) -> Result<(), CompileError> {
 }
 
 impl RustGeneratedFiles {
+    /// Compiles each files creating a project in a temporary directory, or in path if specified
     pub async fn compile(self, path: Option<PathBuf>) -> Result<RustCompiled, CompileError> {
         let (tmpdir, path) = if let Some(path) = path {
             (None, path)
@@ -139,9 +146,13 @@ impl RustGeneratedFiles {
     }
 }
 
+/// Result of a rust compilation, it contains the path to be used.
 pub struct RustCompiled {
-    pub _tmpdir: Option<TempDir>,
+    /// Temporary directory
+    _tmpdir: Option<TempDir>,
+    /// path where the project is stored
     pub path: PathBuf,
+    /// results of the compilation
     pub results: HashMap<String, TestResult>,
 }
 

@@ -2,10 +2,7 @@ use std::fs;
 
 use orchestrator::{default_memory::DefaultMemory, prelude::*, GenerateState};
 //use rust_default::{docker::DockerRun, plugins::cli::CLIPlugin, rust_parser::RustExercise};
-use rust_default::{
-    generator::{RustCompiled, RustExercise, RustGeneratedFiles},
-    plugins::RustDefaultPlugin,
-};
+use rust_default::*;
 
 use tokio::task::JoinSet;
 

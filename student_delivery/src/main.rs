@@ -4,9 +4,7 @@ use orchestrator::default_memory::DefaultMemory;
 use orchestrator::executor::ExecutorGlobalState;
 use orchestrator::orchestrator::Orchestrator;
 use orchestrator::GenerateState;
-use rust_default::generator::{RustCompiled, RustExercise, RustGeneratedFiles};
-use rust_default::plugins::cli_v2::CLIPlugin;
-use rust_default::plugins::RustDefaultPlugin;
+use rust_default::*;
 // stato->stato
 // esercizio->.....->soluzione
 

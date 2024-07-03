@@ -1,4 +1,4 @@
-/*!
+/*! Contains all executor-related objects.
 
 */
 

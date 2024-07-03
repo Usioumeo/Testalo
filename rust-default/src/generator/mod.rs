@@ -31,24 +31,31 @@ pub use compile::RustGeneratedFiles;
 #[derive(thiserror::Error, Debug)]
 /// Error for each RustError variant
 pub enum RustError {
-    #[error("RunError")]
+    /// An execution error occoured
+    #[error("RunError: {0}")]
     RunError(#[from] RunError),
 
-    #[error("Parse error")]
+    /// Error while parsing file
+    #[error("Parse error: {0}")]
     ParserError(#[from] ParserError),
 
+    /// Error while converting to a valid string
     #[error("Not a valid utf-8 file {0}")]
     UTF8Error(#[from] FromUtf8Error),
 
+    /// IO Error
     #[error("IO Error {0}")]
     IOError(#[from] std::io::Error),
 
+    /// It is not a file
     #[error("Not a file")]
     NotAFile,
 
+    /// File not found
     #[error("File {path} not found")]
     FileNotFound { path: String },
 
+    /// Error while parsing file
     #[error("Parsing Error while parsing file: {:?} {}", &.0.span().start(), .0)]
     ParsingError(#[from] syn::Error),
 }
@@ -58,17 +65,18 @@ pub type ItemPathSend = Vec<String>;
 /// A test to execute
 #[derive(Clone, Debug)]
 pub struct RustRunTest {
-    pub func: String,
-    pub to_replace: HashMap<ItemPathSend, String>,
-    pub desc: TestDefinition,
+
+    func: String,
+    to_replace: HashMap<ItemPathSend, String>,
+    desc: TestDefinition,
 }
 
 /// An exercise. It can be viewed as a collection of tests
 #[derive(Clone, Debug)]
 pub struct RustExercise {
     generator: String,
-    pub description: String,
-    pub run_tests: Vec<RustRunTest>,
+    description: String,
+    run_tests: Vec<RustRunTest>,
 }
 impl Default for RustExercise {
     fn default() -> Self {
