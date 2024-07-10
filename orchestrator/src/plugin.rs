@@ -1,5 +1,5 @@
 //! This module contains the definition of a Plugin, and how to wrap it inside the Orchestrator
-//! 
+//!
 use std::{error::Error, future::Future, marker::PhantomData, mem, sync::Arc};
 
 use async_trait::async_trait;
@@ -20,7 +20,7 @@ pub trait Plugin<S: ExecutorGlobalState>: Sized + Send + Sync + 'static {
 
     /// Return a descriptionn of the Plugin. It should contain a list of the registered and activated Executors
     fn desctiption(&self) -> &str;
-    
+
     /// Function called when the Plugin is runned (at the end of the init phase).
     /// it takes an OrchestratorReference, which permit almost complete control over the orchestrator, and a shared Notify.
     /// This notify should get called when a Plugin request an orchestrator shutdown.

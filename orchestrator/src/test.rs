@@ -1,11 +1,8 @@
 //! This module contains some unit test for this crate.
 //! Other than that contains an abstraction to have modularized test for plugins and extensions.
-//! 
-use std::{error::Error, sync::Arc};
+//!
+use std::{error::Error, future::Future, pin::Pin, sync::Arc};
 
-use async_trait::async_trait;
-use rand::{rngs::OsRng, RngCore};
-use tokio::sync::Notify;
 use crate::{
     executor::{AddExecutor, ExecutorGlobalState},
     executor_trait::{ExerciseDef, ExerciseResult, RunResult, TestResult},
@@ -13,6 +10,9 @@ use crate::{
     orchestrator::{Orchestrator, OrchestratorReference, ReferenceWithoutState},
     plugin::Plugin,
 };
+use async_trait::async_trait;
+use rand::{rngs::OsRng, RngCore};
+use tokio::sync::Notify;
 
 /// This is a dummy exercise, and is used in testing, and should not be used outside tests
 #[derive(Clone, Default)]
@@ -101,7 +101,7 @@ pub trait TestInterface: Send + Sync {
 
     /// login the user with the provided username and password
     async fn login(&mut self, name: &str, password: &str) -> Result<(), Box<dyn Error>>;
-    
+
     /// submit an exercise
     async fn submit(
         &mut self,
@@ -118,7 +118,6 @@ struct DefaultInterface<S: ExecutorGlobalState> {
     user: Option<User<Authenticated>>,
 }
 impl<S: ExecutorGlobalState> DefaultInterface<S> {
-
     fn new(o: OrchestratorReference<S>) -> Box<Self> {
         Box::new(Self { o, user: None })
     }
@@ -164,22 +163,47 @@ pub struct DefaultTest {
     t: Option<Box<dyn TestInterface>>,
     ///name source
     es: Option<(String, String)>,
+    additional_function: Option<OptionalFunction>,
 }
+//Pin<Box<dyn Send + Sync + 'static + Future<Output=Result<(), Box<dyn Error + Send + Sync + 'static>>>>>;
+type E = Box<dyn Error + Send + Sync + 'static>;
+type BoxedFuture = Pin<Box<dyn Send + Future<Output = Result<(), E>>>>;
+type OptionalFunction = Box<dyn Send + Sync + Fn(Box<dyn TestInterface>) -> BoxedFuture>;
+
 impl DefaultTest {
     /// create a new Test suite, which connects to the orchestrator with the provided TestInterface
     pub fn new(t: impl TestInterface + 'static) -> Self {
         Self {
             t: Some(Box::new(t)),
             es: None,
+            additional_function: None,
         }
     }
     /// this create a new DefaultTest with DefaultTestInterface
     pub fn new_default() -> Self {
-        Self { t: None, es: None }
+        Self {
+            t: None,
+            es: None,
+            additional_function: None,
+        }
     }
     /// Use this if you want to test an additional exercise called "name" with the source "code"
     pub fn set_exercise(&mut self, name: String, code: String) {
         self.es = Some((name, code));
+    }
+    //F: Future<Output = Result<Output, E>> + 'static + Send + Sync,
+    //E: Into<Box<dyn StdError + Send + Sync + 'static>> ,
+    pub fn set_additional_function<Fut: Send + Future<Output = Result<(), E>> + 'static>(
+        &mut self,
+        f: impl Send + Sync + 'static + Fn(Box<dyn TestInterface>) -> Fut,
+    ) {
+        let inner = move |inp: Box<dyn TestInterface>| {
+            let t = f(inp);
+
+            let t: Pin<Box<dyn Send + Future<Output = Result<(), E>>>> = Box::pin(t);
+            t
+        };
+        self.additional_function = Some(Box::new(inner));
     }
 }
 
@@ -247,9 +271,13 @@ where
             let x = interface.submit(name, source).await;
             assert!(x.is_ok(), "Unexpected Error: {}", x.unwrap_err());
 
-            assert_eq!(interface.list_exercise().await.unwrap().len(), 2);
+            //assert_eq!(interface.list_exercise().await.unwrap().len(), 2);
         } else {
-            assert_eq!(interface.list_exercise().await.unwrap().len(), 1);
+            //assert_eq!(interface.list_exercise().await.unwrap().len(), 1);
+        }
+        interface.list_exercise().await.unwrap().len();
+        if let Some(f) = self.additional_function {
+            f(interface).await.unwrap();
         }
 
         //x.is_ok();

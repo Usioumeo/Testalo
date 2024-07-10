@@ -9,7 +9,7 @@ pub mod problem_selector;
 pub fn DarkModeSwitch() -> Html {
     let darkmode = use_state_eq(|| {
         gloo_utils::window()
-            .match_media("(prefers-color-scheme: dark)")
+            .match_media("(prefers-color-scheme: light)")
             .ok()
             .flatten()
             .map(|m| m.matches())

@@ -1,9 +1,4 @@
-
-
-use orchestrator::{
-    prelude::*,
-    GenerateState,
-};
+use orchestrator::{prelude::*, GenerateState};
 
 use crate::Postgres;
 

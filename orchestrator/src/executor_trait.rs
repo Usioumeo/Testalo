@@ -119,7 +119,6 @@ impl Display for TestResult {
     }
 }
 
-
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 /// Status of a compilation
 pub enum CompilationResult {

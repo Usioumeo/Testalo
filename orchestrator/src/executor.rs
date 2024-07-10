@@ -142,7 +142,7 @@ where
     ) -> Result<(), Box<dyn StdError + Send + Sync + 'static>>
     where
         F: Future<Output = Result<Output, E>> + 'static + Send + Sync,
-        E: Into<Box<dyn StdError + Send + Sync + 'static>> ,
+        E: Into<Box<dyn StdError + Send + Sync + 'static>>,
         Data: Serialize + for<'a> Deserialize<'a> + 'static,
     {
         // wrap in a generic function

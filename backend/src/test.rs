@@ -1,8 +1,4 @@
-use orchestrator::{
-    default_memory::DefaultMemory,
-    prelude::*,
-    GenerateState,
-};
+use orchestrator::{default_memory::DefaultMemory, prelude::*, GenerateState};
 use reqwest::Client;
 use rocket::async_test;
 use std::error::Error;

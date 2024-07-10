@@ -1,5 +1,10 @@
 use orchestrator::prelude::*;
-use sqlx::{prelude::*, query, types::chrono::{DateTime, Utc}, Pool};
+use sqlx::{
+    prelude::*,
+    query,
+    types::chrono::{DateTime, Utc},
+    Pool,
+};
 use std::{error::Error, marker::PhantomData};
 
 /// This is an helper functions

@@ -1,5 +1,5 @@
 //! This library implement a memory abstraction (from the Orchestrator crate)
-//! 
+//!
 //! It connects to a PosgreSQL Database, and handle the creation of all the necessary tables.
 //! (See the example for an example)
 use helpers::{add_test_result, Enabled, Problem, UserWrapper};
@@ -20,12 +20,10 @@ use scrypt::{
 use sqlx::{query, query_as, Pool};
 use tokio::task::{spawn_blocking, JoinError};
 
-
-
 /// Private module
-/// 
+///
 /// It contains some helpers useful in this implementation, but that should not be acessed directly.
-/// 
+///
 mod helpers;
 
 #[cfg(test)]
@@ -38,7 +36,7 @@ pub enum Error {
     ///generic error as string
     #[error("string")]
     String(String),
-    
+
     /// Hash Error from scrypt
     #[error("Hash Error {0}")]
     Hash(#[from] scrypt::password_hash::Error),
@@ -46,7 +44,7 @@ pub enum Error {
     /// Generic SQLX Error
     #[error("Sqlx Error {0}")]
     Sqlx(#[from] sqlx::Error),
-    
+
     /// Join Error from tokio
     #[error("Join Error {0}")]
     TokioJoin(#[from] JoinError),
@@ -67,7 +65,7 @@ pub enum Error {
 ///Postgress implementation.
 ///
 /// It's a wrapper around sqlx::postgres
-/// 
+///
 /// # Examples
 /// It implemeents orchestrator memory abstraction, that means that could be used as:
 /// ```
@@ -94,12 +92,11 @@ pub struct Postgres {
     pool: Pool<sqlx::Postgres>,
 }
 
-
 /// implement some initialization
 impl Postgres {
     /// initialize connector
     /// It could be used multiple times without loosing any data.
-    /// 
+    ///
     /// This is the correct way to obtain Self
     pub async fn init(builder: &str) -> Result<Self, Error> {
         let pool: Pool<sqlx::Postgres> = Pool::connect(builder).await?;

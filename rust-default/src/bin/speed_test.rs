@@ -111,11 +111,6 @@ impl<S: ExecutorGlobalState> Plugin<S> for Run {
             parallel_test(n, o.clone(), auth.clone()).await;
             println!("Currently allocated: {}B", ALLOCATOR.allocated());
         }
-
-        //should_stop.notify_one();
-        /*{
-
-        }*/
     }
 }
 async fn parallel_test<S: ExecutorGlobalState>(

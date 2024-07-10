@@ -14,7 +14,6 @@ use tokio::{fs, process::Command};
 
 use super::RustExercise;
 
-
 /// Error that can get generated in a compilation with cargo
 #[derive(Debug, thiserror::Error)]
 pub enum CompileError {

@@ -13,10 +13,8 @@ pub use crate::memory::*;
 
 pub use crate::plugin::*;
 
-
-
-pub use crate::GenerateState;
 pub use crate::test::{DefaultTest, DummyExercise, TestInterface};
+pub use crate::GenerateState;
 
 /// re-export of tokio-main
 pub use tokio::main;

@@ -250,7 +250,6 @@ impl<S: ExecutorGlobalState> Orchestrator<S> {
     }
 }
 
-
 #[derive(Clone)]
 /// A shared reference to the orchestrator
 pub struct OrchestratorReference<S: ExecutorGlobalState> {
@@ -303,7 +302,6 @@ impl<S: ExecutorGlobalState> ReferenceWithoutState for OrchestratorReference<S> 
         Ok(self.inner.process_exercise(name, s, user).await?)
     }
 }
-
 
 #[cfg(test)]
 mod tests {

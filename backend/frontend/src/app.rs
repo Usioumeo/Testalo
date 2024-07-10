@@ -1,7 +1,6 @@
 use crate::components::exercise_input::RustInput;
 use crate::components::github::Github;
 use crate::components::DarkModeSwitch;
-use crate::pages::counter::Counter;
 use crate::pages::login::LoginPage;
 use crate::pages::register::RegisterPage;
 use patternfly_yew::prelude::*;
@@ -11,7 +10,7 @@ use yew_nested_router::{Router, Target};
 #[derive(Debug, Default, Clone, PartialEq, Eq, Target)]
 
 pub enum AppRoute {
-    Index,
+    //Index,
 
     Exercise,
     #[default]
@@ -22,7 +21,7 @@ pub enum AppRoute {
 impl AppRoute {
     fn switch(self) -> Html {
         match self {
-            AppRoute::Index => html! {<AppPage><Counter/></AppPage>},
+           // AppRoute::Index => html! {<AppPage><Counter/></AppPage>},
 
             AppRoute::Exercise => html!(<AppPage><RustInput/></AppPage>),
             AppRoute::Login => html!(<AppPage><LoginPage/></AppPage>),
@@ -42,12 +41,14 @@ fn page(props: &PageProps) -> Html {
         <PageSidebar>
             <Nav>
                 <NavList>
-                    <NavExpandable title="Basics">
-                        <NavRouterItem<AppRoute> to={AppRoute::Index}>{"Index"}</NavRouterItem<AppRoute>>
-                        <NavRouterItem<AppRoute> to={AppRoute::Exercise}>{"Exercise"}</NavRouterItem<AppRoute>>
+                    <NavRouterItem<AppRoute> to={AppRoute::Exercise}>{"Submit"}</NavRouterItem<AppRoute>>
+                    <NavExpandable title="Logins">
+                        //<NavRouterItem<AppRoute> to={AppRoute::Index}>{"Index"}</NavRouterItem<AppRoute>>
+                        
                         <NavRouterItem<AppRoute> to={AppRoute::Login}>{"Login"}</NavRouterItem<AppRoute>>
                         <NavRouterItem<AppRoute> to={AppRoute::Register}>{"Register"}</NavRouterItem<AppRoute>>
                     </NavExpandable>
+
                 </NavList>
             </Nav>
         </PageSidebar>
@@ -91,7 +92,7 @@ pub fn app() -> Html {
     html! {
         <BackdropViewer>
             <ToastViewer>
-                <Router<AppRoute> default={AppRoute::Index}>
+                <Router<AppRoute> default={AppRoute::Login}>
                     <RouterSwitch<AppRoute> render={AppRoute::switch} />
                 </Router<AppRoute>>
             </ToastViewer>

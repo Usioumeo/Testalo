@@ -1,6 +1,6 @@
+use crate::*;
 use orchestrator::prelude::*;
 use std::{error::Error, path::PathBuf};
-use crate::*;
 /// adds normal rust compilation pipeline:
 /// from RustGeneratedFile to RustCompiled accept where to save the file as a parameter
 pub async fn register_rust_exercise<S>(

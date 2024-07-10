@@ -65,7 +65,6 @@ pub type ItemPathSend = Vec<String>;
 /// A test to execute
 #[derive(Clone, Debug)]
 pub struct RustRunTest {
-
     func: String,
     to_replace: HashMap<ItemPathSend, String>,
     desc: TestDefinition,
