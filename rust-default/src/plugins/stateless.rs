@@ -1,7 +1,7 @@
-use clap::{builder::styling::Color, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 use orchestrator::prelude::*;
 use tokio::fs;
-use std::{collections::HashSet, error::Error, path::PathBuf, sync::Arc};
+use std::{error::Error, path::PathBuf, sync::Arc};
 
 /// Simple program to greet a person
 #[derive(Parser, Debug)]

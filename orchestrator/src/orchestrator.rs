@@ -192,7 +192,7 @@ impl<S: ExecutorGlobalState> Orchestrator<S> {
         );
     }
     /// generate an exercise from a name and a source-code
-    async fn generate_exercise(&self, name: String, source: String) -> Result<S, DynError> {
+    pub async fn generate_exercise(&self, name: String, source: String) -> Result<S, DynError> {
         let (ty, template) = self.memory.get_exercise(name).await?;
         let (generator, source_adder) = self.exercise_generators.get(&ty).ok_or("not found")?;
         let generated = generator(template).await?;
