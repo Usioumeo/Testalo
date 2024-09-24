@@ -1,0 +1,9 @@
+*/target/*
+*/Cargo.lock
+execution_test
+*/dist/*
+TODO
+*/node_modules/*
+run_sql.sh
+*/Rocket.toml
+*/lcov.info

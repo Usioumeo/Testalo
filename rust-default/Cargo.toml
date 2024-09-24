@@ -30,6 +30,8 @@ indicatif  ="0.17"
 tikv-jemallocator = "0.5"
 cap = "0.1"
 proc-macro2 = {version="1.0", features=["span-locations"]}
+clap = { version = "4.5.18", features = ["derive"] }
+
 [features]
 #default = ["rocket", "docker"]
 rocket = ["dep:rocket"]

@@ -62,7 +62,6 @@ async fn test_substitution() {
             }
         }
         #[runtest(2)]
-        //#[refers_to(S::new)]
         /// test if new exists, and works
         fn test_new(){
             let s: S = S::new();
