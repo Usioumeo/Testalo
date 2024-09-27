@@ -16,7 +16,7 @@ GenerateState!(RustExercise, RustGeneratedFiles, RustCompiled, ExerciseResult);
 #[tokio::main]
 async fn main() {
     // init memory and orchestrator
-    let mut o: Orchestrator<State> = Orchestrator::new(10, DefaultMemory::init());
+    let mut o: Orchestrator<State> = Orchestrator::new(10, true, DefaultMemory::init());
     
     o.add_plugin(RustDefaultPlugin::default()).await.unwrap();
     // add plugins

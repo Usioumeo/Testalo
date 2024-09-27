@@ -77,7 +77,7 @@ impl TestInterface for BackendTest {
 async fn test_backend() {
     GenerateState!(ExerciseResult, DummyExercise);
     let m = DefaultMemory::init();
-    let mut o: Orchestrator<State> = Orchestrator::new(16, m);
+    let mut o: Orchestrator<State> = Orchestrator::new(16, true, m);
     let test = BackendTest::new("http://localhost:8000");
     let def = DefaultTest::new(test);
     o.add_plugin(def).await.unwrap();

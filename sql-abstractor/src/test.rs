@@ -11,7 +11,7 @@ async fn test_memory() {
             .await
             .unwrap(),
     );
-    let mut o: Orchestrator<State> = Orchestrator::new(16, m);
+    let mut o: Orchestrator<State> = Orchestrator::new(16, true, m);
 
     let def = DefaultTest::new_default();
     o.add_plugin(def).await.unwrap();

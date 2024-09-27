@@ -106,7 +106,7 @@ fn extract_docs(attributes: &[Attribute]) -> Option<String> {
             }
         })
         .fold(None, |x: Option<String>, y| match x {
-            Some(x) => Some(x + &y),
+            Some(x) => Some(x + "\n" + &y),
             None => Some(y),
         })
 }

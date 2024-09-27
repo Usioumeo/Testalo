@@ -15,7 +15,7 @@ GenerateState!(
 
 #[tokio::main]
 async fn main() {
-    let mut o: Orchestrator<State> = Orchestrator::new(5, DefaultMemory::init());
+    let mut o: Orchestrator<State> = Orchestrator::new(5, true, DefaultMemory::init());
 
     // ADDING FUNCTIONALITY
     o.add_plugin(RustDefaultPlugin::default().set_activate_default())

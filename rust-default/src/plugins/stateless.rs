@@ -63,14 +63,14 @@ impl<S: ExecutorGlobalState> Plugin<S> for StatelessCLIPlugin {
                     }
                 }
             },
-            _ => {}
+           // _ => {}
         }
         should_stop.notify_one();
         
     }
     async fn on_add<'a>(
         &'a mut self,
-        o: &'a mut Orchestrator<S>,
+        _o: &'a mut Orchestrator<S>,
     ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         
         Ok(())

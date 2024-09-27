@@ -20,7 +20,7 @@ async fn main() {
         .await
         .unwrap();
     memory.register("ciao", "mondo").await.unwrap();
-    let mut o: Orchestrator<State> = Orchestrator::new(16, Box::new(memory));
+    let mut o: Orchestrator<State> = Orchestrator::new(16, true, Box::new(memory));
     /*
     o.add_executor(RustGeneratedFiles::compile, None)
         .await

@@ -27,7 +27,7 @@ inquire = "0.7"
 copy_dir = "0.1"
 indicatif  ="0.17"
 
-tikv-jemallocator = "0.5"
+#tikv-jemallocator = "0.5"
 cap = "0.1"
 proc-macro2 = {version="1.0", features=["span-locations"]}
 clap = { version = "4.5.18", features = ["derive"] }

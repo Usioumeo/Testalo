@@ -16,7 +16,7 @@ GenerateState!(
 #[tokio::test]
 async fn test_orchestrator() {
     let m = DefaultMemory::init();
-    let mut o: Orchestrator<State> = Orchestrator::new(16, m);
+    let mut o: Orchestrator<State> = Orchestrator::new(16, true, m);
     let example = r#"
         fn string_reverse(inp: &str)->String{
             inp.chars().rev().collect()
@@ -50,7 +50,7 @@ async fn test_orchestrator() {
 #[tokio::test]
 async fn test_substitution() {
     let m = DefaultMemory::init();
-    let mut o: Orchestrator<State> = Orchestrator::new(16, m);
+    let mut o: Orchestrator<State> = Orchestrator::new(16, true,  m);
     let example = quote! {
         struct S;
         impl S{
