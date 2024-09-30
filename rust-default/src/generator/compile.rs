@@ -4,6 +4,7 @@ use std::{
     string::FromUtf8Error,
 };
 
+use dircpy::copy_dir;
 use orchestrator::{
     executor::AsyncDefault,
     prelude::{CompilationResult, RunResult, TestResult},
@@ -170,7 +171,7 @@ impl Clone for RustCompiled {
             Some(dir) => {
                 let new_dir = TempDir::new("tmp_compile").unwrap();
 
-                copy_dir::copy_dir(dir.path(), new_dir.path().join("*")).unwrap();
+                copy_dir(dir, &new_dir).unwrap();
                 Some(new_dir)
             }
             None => None,
