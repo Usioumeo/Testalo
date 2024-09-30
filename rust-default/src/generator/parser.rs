@@ -138,7 +138,7 @@ impl<'ast> Visit<'ast> for Parser {
                     let mut impl_block = impl_block.clone();
                     impl_block.items = vec![ImplItem::Fn(f.clone())];
                     //let path = impl_block.self_ty.to_token_stream().to_string();
-                    println!("{}", type_path.to_token_stream());
+                    //println!("{}", type_path.to_token_stream());
                     self.default_impls.insert(type_path, Item::Impl(impl_block));
                 }
                 x => {
