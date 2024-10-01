@@ -3,3 +3,8 @@ members = ["orchestrator", "rust-default", "backend", "sql-abstractor", "load-te
 
 resolver="2"
 exclude = ["execution_test",  "student_delivery", "backend/frontend", "procedural-macros"]
+
+[workspace.dependencies]
+openssl = { version = "0.10", features = ["vendored"] }
+openssl-sys = { version = "0.9.103", features = ["vendored"] }
+#pq-sys={version="0.6", features = ["bundled"]}

@@ -47,9 +47,9 @@ esac" > ./get_target.sh
 #add compilation target
 RUN rustup target add $(sh ./get_target.sh)
 # clone pq-sys, and correct a little bug
-RUN cd .. ; \
-    git clone --recurse-submodules -j8 https://github.com/sgrif/pq-sys.git ; \
-    sed -i '/#define PG_INT128_TYPE __int128/d' ./pq-sys/pq-src/additional_include/pg_config.h
+#RUN cd .. ; \
+#    git clone --recurse-submodules -j8 https://github.com/sgrif/pq-sys.git ; \
+#    sed -i '/#define PG_INT128_TYPE __int128/d' ./pq-sys/pq-src/additional_include/pg_config.h
 
 #plan what it should be built
 FROM chef AS planner
@@ -65,10 +65,12 @@ COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --target $(sh ./get_target.sh)  --recipe-path recipe.json
 COPY . .
 RUN cargo build --release --target $(sh ./get_target.sh) --bin backend
+RUN trunk build ./backend/frontend
 RUN cd /app/target/$(sh ./get_target.sh)/release/ ; ls -la
 RUN mv /app/target/$(sh ./get_target.sh)/release/backend /backend
-
+RUN mv /app/backend/frontend/dist /app/frontend/dist
 # We do not need the Rust toolchain to run the binary!
+
 FROM alpine:latest AS runtime
 WORKDIR /app
 ENV ROCKET_ADDRESS=0.0.0.0
