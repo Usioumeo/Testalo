@@ -1,6 +1,9 @@
 //! This module keeps track of al the Memory related abstraction
+//!
 //! Memory is considered the layer that keeps track of the exercise, submission, user...
-//! It's not important how it is implemented, or how the data are structured. It has to respond to some simple queries in the Memory trait.
+//! It's not important how it is implemented, or how the data are structured.
+//!
+//! It has to respond to some simple queries in the Memory trait.
 //!
 //! The Memory trait is actualy formed by two traits: StatelessMemory and StateMemory.
 //! This is needed to expose StateMemory only when it is actualy possible to specify the state.

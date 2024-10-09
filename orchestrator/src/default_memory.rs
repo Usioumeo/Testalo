@@ -298,7 +298,6 @@ impl<S: ExecutorGlobalState> StateMemory<S> for DefaultMemory {
 }
 
 /// helper function used to check if there are cycles. It is public in order to be used by other memory implementations.
-
 pub fn has_cycles(vertex: &HashMap<String, String>) -> bool {
     let nodes: Vec<&String> = vertex
         .iter()

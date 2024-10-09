@@ -7,7 +7,7 @@ The code is subdivided in 4 modules:
  * run: executing and collecting the results
  */
 
-use std::{collections::HashMap, string::FromUtf8Error};
+use std::{collections::HashMap, path::Path, string::FromUtf8Error};
 
 use orchestrator::prelude::{ExerciseDef, TestDefinition};
 use quote::quote;
@@ -176,23 +176,6 @@ impl RustExercise {
         let p = Parser::new(file)?;
         Ok(p.finish()?)
     }
-
-    /// Load directly from file.
-    /// Path must be a valid path pointing to a local file
-    /*pub async fn load<P: AsRef<Path>>(path: P) -> Result<Self, RustError> {
-        //extract file name (it will become the exercise name)
-        let name = path
-            .as_ref()
-            .file_name()
-            .and_then(|x| x.to_str())
-            .ok_or(RustError::NotAFile)?
-            .to_string();
-
-        // read and parse
-        let file = tokio::fs::read(path).await?;
-        let file = String::from_utf8(file)?;
-        Self::parse(&file)
-    }*/
 
     /// it generates file, getting reading for compilation
     pub async fn generate_files(self, solution: String) -> Result<RustGeneratedFiles, RustError> {

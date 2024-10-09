@@ -175,7 +175,6 @@ impl<S: ExecutorGlobalState> Orchestrator<S> {
     ///
     /// NB: it does not check if it's correct or not
     /// if a generator is already present it gets overriten
-
     pub async fn add_exercise_generators<Definition, DefinitionWithSource, F, F2>(
         &mut self,
         exercise_gen: fn(String) -> F,

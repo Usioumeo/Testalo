@@ -1,13 +1,16 @@
 //! from (hopefully) rs file to multiple files with all that is needed to compile Vec<String>
 //!
 //!
-use std::collections::HashMap;
 use orchestrator::prelude::ExerciseDef;
+use quote::quote;
+use quote::ToTokens;
+use std::collections::HashMap;
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
 use syn::visit::visit_item_mod;
 use syn::{
-    parse_str, ExprLit, File, Generics, Ident, Item, ItemFn, ItemImpl, Lifetime, LitFloat, LitInt, LitStr, Path, PathSegment, Token, Type, TypePath
+    parse_str, ExprLit, File, Generics, Ident, Item, ItemFn, ItemImpl, Lifetime, LitFloat, LitInt,
+    LitStr, Path, PathSegment, Token, Type, TypePath,
 };
 
 use syn::{
@@ -28,10 +31,16 @@ pub struct ImplementationPath {
     trait_: Option<Path>,
     pub path: Option<Punctuated<PathSegment, Token![::]>>,
 }
-#[test]
-fn test_sync(){
-    fn sync<T: Sync>(){}
-    //sync::<Type>();
+impl ToTokens for ImplementationPath {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        let generics = &self.generics;
+        let trait_ = self.trait_.as_ref().map(|x| quote! {#x for});
+        let type_ = &self.type_;
+        let path = self.path.as_ref().map(|x| quote! {in #x});
+        let t = quote! {impl #generics #trait_ #type_ #path};
+
+        tokens.extend(t);
+    }
 }
 
 impl From<&ItemImpl> for ImplementationPath {
@@ -108,12 +117,22 @@ pub struct UnfinishedTestDefinition {
     description: String,
     points: f32,
 }
-impl UnfinishedTestDefinition{
-    pub fn finish(self, default_impl: &HashMap<ImplementationPath, Item> )->Result<TestDefinition, RustError>{
-        let to_overwrite = self.to_overwrite.into_iter().map(|o| {
-            default_impl.get(&o).map(|x| (o.clone(), x.clone())).ok_or(RustError::MatchNotFound(format!("{:?}", o)))
-        }).collect::<Result<_, RustError>>()?;
-        Ok(TestDefinition{
+impl UnfinishedTestDefinition {
+    pub fn finish(
+        self,
+        default_impl: &HashMap<ImplementationPath, Item>,
+    ) -> Result<TestDefinition, RustError> {
+        let to_overwrite = self
+            .to_overwrite
+            .into_iter()
+            .map(|o| {
+                default_impl
+                    .get(&o)
+                    .map(|x| (o.clone(), x.clone()))
+                    .ok_or(RustError::MatchNotFound(format!("{:?}", o)))
+            })
+            .collect::<Result<_, RustError>>()?;
+        Ok(TestDefinition {
             to_overwrite,
             test: self.test,
             description: self.description,
@@ -121,7 +140,6 @@ impl UnfinishedTestDefinition{
         })
     }
 }
-
 
 #[derive(Default, Debug)]
 pub struct Visiter {
@@ -132,43 +150,105 @@ pub struct Visiter {
     /// store the default implementations. the key is PaUseTreeth, optional Trait.
     default_impls: HashMap<ImplementationPath, Item>,
 }
+
+pub struct TestDefinition {
+    pub(crate) to_overwrite: HashMap<ImplementationPath, Item>,
+    pub(crate)test: ItemFn,
+    pub(crate)description: String,
+    pub(crate)points: f32,
+}
 #[derive(Clone)]
-pub struct TestDefinition{
-    to_overwrite: HashMap<ImplementationPath, Item>,
-    test: ItemFn,
+pub struct SendableTestDefinition {
+    name: String,
+    to_overwrite: HashMap<String, String>,
+    test: String,
     description: String,
     points: f32,
 }
-#[derive(Clone, Default)]
-pub struct RustExercise{
-    dependencies: Vec<String>,
-    description: String,
-    tests: Vec<TestDefinition>,
+impl From<TestDefinition> for SendableTestDefinition {
+    fn from(value: TestDefinition) -> Self {
+        let name = value.test.sig.ident.to_string();
+        Self {
+            name,
+            to_overwrite: value
+                .to_overwrite
+                .into_iter()
+                .map(|(a, b)| {
+                    (
+                        a.to_token_stream().to_string(),
+                        b.to_token_stream().to_string(),
+                    )
+                })
+                .collect(),
+            test: value.test.to_token_stream().to_string(),
+            description: value.description,
+            points: value.points,
+        }
+    }
 }
-impl RustExercise{
-    pub fn parse(s: &str)->Result<Self, RustError>{
+impl TryFrom<SendableTestDefinition> for TestDefinition {
+    fn try_from(value: SendableTestDefinition) -> Result<Self, RustError> {
+        Ok(Self {
+            to_overwrite: value
+                .to_overwrite
+                .into_iter()
+                .map(|(a, b)| Ok((parse_str(&a)?, parse_str(&b)?)))
+                .collect::<Result<HashMap<ImplementationPath, Item>, RustError>>()?,
+            test: parse_str::<ItemFn>(&value.test)?,
+            description: value.description,
+            points: value.points,
+        })
+    }
+
+    type Error = RustError;
+}
+
+#[derive(Clone, Default)]
+pub struct RustExercise {
+    original: String,
+    pub dependencies: Vec<String>,
+    description: String,
+    pub tests: Vec<SendableTestDefinition>,
+}
+
+impl ExerciseDef for RustExercise {
+    fn description(&self) -> &str {
+        &self.description
+    }
+
+    fn get_generator_src(&self) -> &str {
+        &self.original
+    }
+
+    fn list(&self) -> Vec<orchestrator::prelude::TestDefinition> {
+        self.tests
+            .iter()
+            .map(|x| orchestrator::prelude::TestDefinition {
+                name: x.name.clone(),
+                description: x.description.clone(),
+                points: x.points as f64,
+                is_visible: true,
+            })
+            .collect()
+    }
+}
+
+impl RustExercise {
+    pub fn parse(s: &str) -> Result<Self, RustError> {
         let file = parse_str::<File>(s)?;
         let mut v = Visiter::default();
         v.visit_file(&file);
-        let tests = v.tests.into_iter().map(|x| x.finish(&v.default_impls)).collect::<Result<Vec<TestDefinition>, RustError>>()?;
-        Ok(RustExercise{
+        let tests = v
+            .tests
+            .into_iter()
+            .map(|x| x.finish(&v.default_impls).map(SendableTestDefinition::from))
+            .collect::<Result<Vec<SendableTestDefinition>, RustError>>()?;
+        Ok(RustExercise {
+            original: s.to_string(),
             dependencies: v.dependencies,
             description: v.description.unwrap_or(String::new()),
             tests,
         })
-    }
-}
-impl ExerciseDef for RustExercise{
-    fn description(&self) -> &str {
-        todo!()
-    }
-
-    fn get_generator_src(&self) -> &str {
-        todo!()
-    }
-
-    fn list(&self) -> Vec<orchestrator::prelude::TestDefinition> {
-        todo!()
     }
 }
 
@@ -205,17 +285,19 @@ fn extract_documentation<'a>(value: impl Iterator<Item = &'a Attribute>) -> Opti
         .reduce(|x, y| x + "\n" + &y)
 }
 
-fn extract_dependencies<'a>(value: impl Iterator<Item = &'a Attribute>) -> Vec<String>{
-    value.filter_map(|x| {
-        if !x.path().is_ident("dependency"){
-            return None;
-        }
-        let v = x.parse_args::<LitStr>().ok()?;
-        Some(v.value())
-    }).collect()
+fn extract_dependencies<'a>(value: impl Iterator<Item = &'a Attribute>) -> Vec<String> {
+    value
+        .filter_map(|x| {
+            if !x.path().is_ident("dependency") {
+                return None;
+            }
+            let v = x.parse_args::<LitStr>().ok()?;
+            Some(v.value())
+        })
+        .collect()
 }
 
-fn extract_fn<'a>(func: &ItemFn) -> Option<UnfinishedTestDefinition> {
+fn extract_fn(func: &ItemFn) -> Option<UnfinishedTestDefinition> {
     let description = extract_documentation(func.attrs.iter()).unwrap_or(String::new());
     let points = func
         .attrs
@@ -251,11 +333,7 @@ fn extract_fn<'a>(func: &ItemFn) -> Option<UnfinishedTestDefinition> {
             if !attribute.path().is_ident("overwrite") {
                 return None;
             }
-            if let Some(path) = attribute.parse_args().ok() {
-                Some(path)
-            } else {
-                None
-            }
+            attribute.parse_args().ok()
         })
         .collect();
 
@@ -277,7 +355,7 @@ impl<'a> Visit<'a> for Visiter {
             .items
             .iter()
             .filter_map(|item| match item {
-                Item::Fn(item_fn) => extract_fn(&item_fn),
+                Item::Fn(item_fn) => extract_fn(item_fn),
                 _ => None,
             })
             .collect();
@@ -293,7 +371,7 @@ impl<'a> Visit<'a> for Visiter {
         self.mod_path.push(segment);
 
         // visit inner
-        visit_item_mod(self, &i);
+        visit_item_mod(self, i);
 
         // pop name from mod_path
         self.mod_path.pop();
@@ -337,24 +415,25 @@ impl<'a> Visit<'a> for Visiter {
     }
     ///for functions
     fn visit_item_fn(&mut self, i: &'a syn::ItemFn) {
-        if extract_fn(&i).is_some(){
+        if extract_fn(i).is_some() {
             return;
         }
-        let mut  type_ = Punctuated::new();
+        let mut type_ = Punctuated::new();
         type_.push(i.sig.ident.clone().into());
-        let type_ = TypePath{
+        let type_ = TypePath {
             qself: None,
-            path: Path{
+            path: Path {
                 leading_colon: None,
                 segments: type_,
             },
-        }.into();
-        let path = if self.mod_path.len()>0{
+        }
+        .into();
+        let path = if !self.mod_path.is_empty() {
             Some(self.mod_path.clone())
-        }else{
+        } else {
             None
         };
-        let key = ImplementationPath{
+        let key = ImplementationPath {
             generics: Generics::default(),
             type_,
             trait_: None,
@@ -368,10 +447,11 @@ impl<'a> Visit<'a> for Visiter {
 mod tests {
     use std::collections::HashMap;
 
+    use super::{ImplementationPath, Visiter};
     use quote::{quote, ToTokens};
+    use syn::parse_str;
     use syn::punctuated::Punctuated;
     use syn::{parse2, parse_file, visit::Visit, File, Generics, Path, Type, TypePath};
-    use super::{ImplementationPath, Visiter};
     #[test]
     fn test() {
         let q = quote! {
@@ -425,16 +505,22 @@ mod tests {
             }
         };
         let file = parse2::<File>(q).unwrap();
-        let mut v =Visiter::default();
+        let mut v = Visiter::default();
         v.visit_file(&file);
-        
+
         assert_eq!(v.dependencies, vec!["rand=0.1".to_string()]);
         assert_eq!(v.description, Some(" test comment".to_string()));
         let punctuated: Path = parse2(quote! {bigger}).unwrap();
-        let impl_path = ImplementationPath{
+        let impl_path = ImplementationPath {
             generics: Generics::default(),
-            type_: Type::Path(TypePath{qself: None, path: Path{leading_colon: None, segments: punctuated.segments}}),
-            trait_: None ,
+            type_: Type::Path(TypePath {
+                qself: None,
+                path: Path {
+                    leading_colon: None,
+                    segments: punctuated.segments,
+                },
+            }),
+            trait_: None,
             path: None,
         };
         let function = syn::parse2(quote! {fn bigger(a: i32, b:i32)->i32{
@@ -444,18 +530,32 @@ mod tests {
                 b
             }
         }
-        }).unwrap();
+        })
+        .unwrap();
         let mut default_impls = HashMap::new();
         default_impls.insert(impl_path, function);
         assert_eq!(v.default_impls, default_impls);
         assert_eq!(v.mod_path, Punctuated::new());
-        assert!(v.tests.len()==1);
+        assert!(v.tests.len() == 1);
         let test = v.tests[0].clone();
         assert_eq!(test.description, " comment");
         assert_eq!(test.points, 1.0);
         // TODO finish
         /*assert_eq!(test.test, parse_str("fn test_1(){
 
-            }").unwrap());*/
+        }").unwrap());*/
+    }
+    #[test]
+    fn test_implementation_path() {
+        let t = "impl Derive for a in b :: c";
+        let p = parse_str::<ImplementationPath>(t).unwrap();
+        assert_eq!(p.to_token_stream().to_string(), t);
+
+        let t = "impl a in b :: c";
+        let p = parse_str::<ImplementationPath>(t).unwrap();
+        assert_eq!(p.to_token_stream().to_string(), t);
+        let t = "impl a";
+        let p = parse_str::<ImplementationPath>(t).unwrap();
+        assert_eq!(p.to_token_stream().to_string(), t);
     }
 }

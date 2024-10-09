@@ -16,3 +16,5 @@ pub use crate::generator::{RustCompiled, RustExercise, RustGeneratedFiles};
 pub use crate::plugins::{
     cli_v2::CLIPlugin, rust_default::RustDefaultPlugin, stateless::StatelessCLIPlugin,
 };
+
+pub mod prelude;

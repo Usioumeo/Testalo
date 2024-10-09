@@ -163,8 +163,15 @@ impl AsyncDefault for RustCompiled {
         let path = _tmpdir.path().to_path_buf();
         let _tmpdir = Some(_tmpdir);
         let mut results = HashMap::new();
-        results.insert("test_nothing".to_string(), TestResult{compiled: CompilationResult::Built, runned: RunResult::NotRun, points_given: 1.0});
-        RustCompiled{
+        results.insert(
+            "test_nothing".to_string(),
+            TestResult {
+                compiled: CompilationResult::Built,
+                runned: RunResult::NotRun,
+                points_given: 1.0,
+            },
+        );
+        RustCompiled {
             _tmpdir,
             path,
             results,

@@ -86,7 +86,7 @@ macro_rules! GenerateState {
 }
 
 /// it's an auto trait. It it has all the requirements it will be used
-pub trait ExecutorState: Clone + AsyncDefault + 'static + Any {}
+pub trait ExecutorState: Send + Sync + Clone + AsyncDefault + 'static + Any {}
 /// automatic implementation for autotrait
 impl<S: Clone + Send + Sync + 'static + AsyncDefault + Any> ExecutorState for S {}
 
@@ -161,13 +161,13 @@ where
             t
         };
         let serialized_data = serde_json::to_string(&data)?;
-        if self.check_when_add{
+        if self.check_when_add {
             if let Err(err) = f(Into::into(Input::async_default().await), serialized_data).await {
                 Err(format!("Execution Failed with error: {}", err).as_str())?
             }
         }
         // check if it is working
-         
+
         self.executors
             .insert((TypeId::of::<Input>(), TypeId::of::<Output>()), Box::new(f));
         Ok(())
