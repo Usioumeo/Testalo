@@ -27,7 +27,7 @@ pub struct TestDefinition {
 /// In particular it must implement all the methods and Clone.
 ///
 /// In addition to that it must be Send and Sync.
-pub trait ExerciseDef: Sync + Send + Any {
+pub trait ExerciseDef: Any {
     /// return a description
     fn description(&self) -> &str;
     /// from which source code was it generate?

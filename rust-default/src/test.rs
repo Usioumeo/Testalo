@@ -50,7 +50,7 @@ async fn test_orchestrator() {
 #[tokio::test]
 async fn test_substitution() {
     let m = DefaultMemory::init();
-    let mut o: Orchestrator<State> = Orchestrator::new(16, true,  m);
+    let mut o: Orchestrator<State> = Orchestrator::new(16, true, m);
     let example = quote! {
         struct S;
         impl S{

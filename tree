@@ -225,7 +225,7 @@ backend v0.1.0 (/home/alessio/Documents/universita/bachelor/tesi/testalo/backend
 │   │   │   │       └── vcpkg v0.2.15
 │   │   │   ├── openssl-probe v0.1.5
 │   │   │   └── openssl-sys v0.9.103 (*)
-│   │   ├── tokio v1.40.0 (*)
+│   │   ├── tokio v1.40.0 (*)openssl
 │   │   ├── tokio-native-tls v0.3.1
 │   │   │   ├── native-tls v0.2.12 (*)
 │   │   │   └── tokio v1.40.0 (*)

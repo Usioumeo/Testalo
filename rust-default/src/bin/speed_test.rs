@@ -58,7 +58,7 @@ async fn run_serial(
 }
 #[tokio::main]
 async fn main() {
-    let mut o: Orchestrator<State> = Orchestrator::new(100000000, true,  DefaultMemory::init());
+    let mut o: Orchestrator<State> = Orchestrator::new(100000000, true, DefaultMemory::init());
     o.add_executor(run_parallel, ()).await.unwrap();
     o.add_executor(run_serial, ()).await.unwrap();
     o.enable_executor::<ParallelTestInput, ExerciseResult, ()>(())
@@ -108,7 +108,7 @@ impl<S: ExecutorGlobalState> Plugin<S> for Run {
         let n: u64 = 3000000;
         for _ in 0..10 {
             parallel_test(n, o.clone(), auth.clone()).await;
-           // println!("Currently allocated: {}B", ALLOCATOR.allocated());
+            // println!("Currently allocated: {}B", ALLOCATOR.allocated());
         }
     }
 }

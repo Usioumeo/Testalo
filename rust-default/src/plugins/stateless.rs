@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 use orchestrator::prelude::*;
-use tokio::fs;
 use std::{error::Error, path::PathBuf, sync::Arc};
+use tokio::fs;
 
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
@@ -40,11 +40,14 @@ impl<S: ExecutorGlobalState> Plugin<S> for StatelessCLIPlugin {
         let login = o.memory().login("cli_plugin", "cli_plugin").await.unwrap();
         let a = Args::parse();
         let names = o.memory().list_exercise_names().await.unwrap();
-        match  a.command {
-            Commands::Submit { exercise_name, file_path } => {
-                if !names.contains(&exercise_name){
+        match a.command {
+            Commands::Submit {
+                exercise_name,
+                file_path,
+            } => {
+                if !names.contains(&exercise_name) {
                     println!("Exercise not found, choose from the following:");
-                    for x in names{
+                    for x in names {
                         println!("\t {x}");
                     }
                 }
@@ -62,18 +65,14 @@ impl<S: ExecutorGlobalState> Plugin<S> for StatelessCLIPlugin {
                         println!("got error: {x}")
                     }
                 }
-            },
-           // _ => {}
+            } // _ => {}
         }
         should_stop.notify_one();
-        
     }
     async fn on_add<'a>(
         &'a mut self,
         _o: &'a mut Orchestrator<S>,
     ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
-        
         Ok(())
     }
-
 }

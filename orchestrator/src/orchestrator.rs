@@ -1,6 +1,7 @@
 //! This is the main module, and contains the definition of the orchestrator
 use std::{
-    any::TypeId, collections::HashMap, error::Error, future::Future, marker::PhantomData, mem, ops::Deref, pin::Pin, sync::Arc
+    any::TypeId, collections::HashMap, error::Error, future::Future, marker::PhantomData, mem,
+    ops::Deref, pin::Pin, sync::Arc,
 };
 
 use crate::prelude::*;
@@ -42,7 +43,6 @@ pub type UserSrcAdder<S> = Box<dyn Send + Sync + Fn(S, String) -> ExerciseGenera
 /// Which error should the implementation return?
 pub type DynError = Box<dyn Error + Send + Sync>;
 
-
 /*
 Definition: ExecutorState + ExerciseDef + Into<S> + TryFrom<S>,
         DefinitionWithSource: ExecutorState + Into<S>,
@@ -50,7 +50,13 @@ Definition: ExecutorState + ExerciseDef + Into<S> + TryFrom<S>,
             + 'static
             + Send
             + Sync,*/
-pub type ExerciseDefinitionFuture = Pin<Box<dyn Send + Sync + Future<Output=Result<Box<dyn ExerciseDef>, Box<dyn Error + Send + Sync + 'static>>>>>;
+pub type ExerciseDefinitionFuture = Pin<
+    Box<
+        dyn Send
+            + Sync
+            + Future<Output = Result<Box<dyn ExerciseDef>, Box<dyn Error + Send + Sync + 'static>>>,
+    >,
+>;
 pub type ExerciseDefinitionFunction = Box<dyn Send + Sync + Fn(String) -> ExerciseDefinitionFuture>;
 /// The main struct, it orchestrates all plugins, executors, memory ecc...
 pub struct Orchestrator<S: ExecutorGlobalState> {
@@ -63,7 +69,7 @@ pub struct Orchestrator<S: ExecutorGlobalState> {
 
     execise_definition: HashMap<TypeId, ExerciseDefinitionFunction>,
 
-    check_when_add: bool,
+    pub check_when_add: bool,
     /// saved plugin, runned with run method
     plugins: Vec<Box<dyn InnerPlugin<S>>>,
     /// semaphore to keep track of concurrent exercise execution
@@ -115,7 +121,7 @@ impl<S: ExecutorGlobalState> Orchestrator<S> {
     /// Then tries to do a normal execution, and check if it does indeed return full score
     /// if not returns an error (and obviusly doesn't add it)
     pub async fn add_exercise<ExerciseType: ExerciseDef + ExecutorState>(
-        & self,
+        &self,
         name: &str,
         source: &str,
     ) -> Result<(), DynError> {
@@ -124,10 +130,11 @@ impl<S: ExecutorGlobalState> Orchestrator<S> {
             .get(&TypeId::of::<ExerciseType>())
             .ok_or(OrchestratorError::NotFound)?;
         let exercise_def = generator(source.to_string()).await?;
-        if self.check_when_add{
-             //test
-            
-            let exercise_with_solution = src_adder(exercise_def.clone(), source.to_string()).await?;
+        if self.check_when_add {
+            //test
+
+            let exercise_with_solution =
+                src_adder(exercise_def.clone(), source.to_string()).await?;
             let results = self.run_state(exercise_with_solution).await?;
             let results: ExerciseResult = results
                 .try_into()
@@ -145,7 +152,7 @@ impl<S: ExecutorGlobalState> Orchestrator<S> {
                 ))?
             }
         }
-       
+
         self.memory
             .add_exercise(name.to_string(), exercise_def, source.to_string())
             .await?;
@@ -186,7 +193,7 @@ impl<S: ExecutorGlobalState> Orchestrator<S> {
             + Sync,
     {
         // wrap in a generic function
-        let e = exercise_gen.clone();
+        let e = exercise_gen;
         let exercise_def = move |template: String| {
             let t: ExerciseDefinitionFuture = Box::pin(async move {
                 let t = e(template).await?;
@@ -195,7 +202,8 @@ impl<S: ExecutorGlobalState> Orchestrator<S> {
             });
             t
         };
-        self.execise_definition.insert(TypeId::of::<Definition>(), Box::new(exercise_def));
+        self.execise_definition
+            .insert(TypeId::of::<Definition>(), Box::new(exercise_def));
         let exercise_gen = move |template: String| {
             let t: ExerciseGeneratorFuture<S> = Box::pin(async move {
                 let ret = exercise_gen(template).await?;
@@ -228,12 +236,11 @@ impl<S: ExecutorGlobalState> Orchestrator<S> {
         let added = source_adder(generated, source).await?;
         Ok(added)
     }
-    pub async fn get_exercise_info(&self, name: String)-> Result<Box<dyn ExerciseDef>, DynError>{
+    pub async fn get_exercise_info(&self, name: String) -> Result<Box<dyn ExerciseDef>, DynError> {
         let (ty, template) = self.memory.get_exercise(name).await?;
-        let s  =self.execise_definition.get(&ty).ok_or("not found")?(template).await?;
+        let s = self.execise_definition.get(&ty).ok_or("not found")?(template).await?;
         Ok(s)
     }
-
 
     /// Adds a plugin to the orchestrator
     pub async fn add_plugin<P: Plugin<S> + 'static>(&mut self, mut p: P) -> Result<(), DynError> {

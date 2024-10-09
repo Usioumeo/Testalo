@@ -55,7 +55,7 @@ pub fn parse_errors(inp: &str, tests: &mut HashMap<String, TestResult>) {
             let message = error.get("message")?.as_object()?;
             let level = message.get("level")?;
             let rendered = message.get("rendered")?.as_str()?.to_string();
-            let rendered = rendered.replace("\\n", &String::from_utf8(b"\n".to_vec()).unwrap());
+            let rendered = rendered.replace("\\n", std::str::from_utf8(b"\n").unwrap());
 
             let target = error.get("target")?.as_object()?;
             let name = target.get("name")?.as_str()?;
@@ -147,6 +147,7 @@ impl RustGeneratedFiles {
 }
 
 /// Result of a rust compilation, it contains the path to be used.
+#[derive(Debug)]
 pub struct RustCompiled {
     /// Temporary directory
     _tmpdir: Option<TempDir>,
@@ -158,11 +159,16 @@ pub struct RustCompiled {
 
 impl AsyncDefault for RustCompiled {
     async fn async_default() -> Self {
-        RustGeneratedFiles::async_default()
-            .await
-            .compile(None)
-            .await
-            .unwrap()
+        let _tmpdir = TempDir::new("test_dir").unwrap();
+        let path = _tmpdir.path().to_path_buf();
+        let _tmpdir = Some(_tmpdir);
+        let mut results = HashMap::new();
+        results.insert("test_nothing".to_string(), TestResult{compiled: CompilationResult::Built, runned: RunResult::NotRun, points_given: 1.0});
+        RustCompiled{
+            _tmpdir,
+            path,
+            results,
+        }
     }
 }
 impl Clone for RustCompiled {

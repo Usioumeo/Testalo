@@ -22,7 +22,6 @@ use self::{
     parser::{Parser, ParserError},
     run::RunError,
 };
-
 pub(crate) mod compile;
 pub(crate) mod parser;
 pub(crate) mod run;

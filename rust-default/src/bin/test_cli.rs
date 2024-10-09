@@ -3,7 +3,6 @@ use std::fs;
 use orchestrator::{default_memory::DefaultMemory, prelude::*, GenerateState};
 use rust_default::*;
 
-
 GenerateState!(
     RustExercise,
     RustGeneratedFiles,
