@@ -11,16 +11,16 @@ where
     S: ExecutorGlobalState
         + From<RustExercise2>
         + From<GeneratedFiles2>
-        //+ From<RustCompiled>
+        + From<RustCompiled2>
         + From<ExerciseResult>,
-    //RustGeneratedFiles: TryFrom<S>,
-    //RustCompiled: TryFrom<S>,
+    GeneratedFiles2: TryFrom<S>,
+    RustCompiled2: TryFrom<S>,
     RustExercise2: TryFrom<S>,
 {
     //add executors
-    //o.add_executor(RustGeneratedFiles::compile, None).await?;
+    o.add_executor(RustCompiled2::compile, None).await?;
 
-    //o.add_executor(|s, _| RustCompiled::run(s), ()).await?;
+    o.add_executor(|s, _| RustCompiled2::run(s), ()).await?;
 
     // add exercise generators
     let f1 = |c: String| async move {

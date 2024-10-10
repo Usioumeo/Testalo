@@ -14,7 +14,8 @@ use super::parser::{extract_fn, ImplementationPath, RustExercise};
 
 #[derive(Clone, Default, Debug)]
 pub struct GeneratedFiles {
-    pub(crate) files: HashMap<String, String>,
+    pub(crate) files: HashMap<String, (String, f32)>,
+    pub(crate) dependencies: Vec<String>,
 }
 
 impl GeneratedFiles {
@@ -26,18 +27,19 @@ impl GeneratedFiles {
             .into_iter()
             .map( TestDefinition::try_from)
             .collect::<Result<Vec<TestDefinition>, RustError>>()?;
-        let files: HashMap<String, String> = tests
+        let files: HashMap<String, (String, f32)> = tests
             .into_iter()
             .map(|test| {
+                let points = test.points;
                 let mut s = Substitute::new(test);
                 let solution = s.fold_file(user.clone());
                 let file = prettyplease::unparse(&solution);
-                (s.name, file)
+                (s.name, (file, points ))
             })
             .collect();
         //let def = TestDefinition::try_from(def)?;
 
-        Ok(GeneratedFiles { files })
+        Ok(GeneratedFiles { files, dependencies: def.dependencies})
     }
 }
 
@@ -219,6 +221,10 @@ impl Fold for Substitute {
 
 #[cfg(test)]
 mod tests{
+    use std::collections::HashMap;
+
+    use syn::{parse_quote, File};
+
     use crate::prelude::{GeneratedFiles2, RustExercise2};
 
     #[test]
@@ -257,8 +263,31 @@ mod tests{
         let q = q.to_string();
         let t = RustExercise2::parse(&q).unwrap();
         let res = GeneratedFiles2::generate(t, "".to_string()).unwrap();
-        for (name, file) in res.files{
-            println!("{name}:\n{file}\n\n\n\n");
-        }
+        let mut h = HashMap:: new();
+        let test_1: File = parse_quote!{
+            mod hidden {
+                mod hidden2 {
+                    fn point_me() {}
+                }
+            }
+            /// comment
+            fn main() {
+                use rand;
+                ///magic test
+                struct lol;
+            }
+        };
+        let test_2: File = parse_quote!{
+            mod hidden {
+                impl Dummy {
+                    fn print() {}
+                }
+            }
+            fn main() {}
+        };
+        h.insert("test_1".to_string(), 
+        (prettyplease::unparse(&test_1), 1.0));
+        h.insert("test_2".to_string(), (prettyplease::unparse(&test_2), 1.0));
+        assert_eq!(h, res.files);
     }
 }
