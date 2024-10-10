@@ -7,7 +7,7 @@ The code is subdivided in 4 modules:
  * run: executing and collecting the results
  */
 
-use std::{collections::HashMap, path::Path, string::FromUtf8Error};
+use std::{collections::HashMap, string::FromUtf8Error};
 
 use orchestrator::prelude::{ExerciseDef, TestDefinition};
 use quote::quote;

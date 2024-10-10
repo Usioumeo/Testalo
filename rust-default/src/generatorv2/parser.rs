@@ -1,25 +1,26 @@
 //! from (hopefully) rs file to multiple files with all that is needed to compile Vec<String>
 //!
 //!
-use orchestrator::prelude::ExerciseDef;
-use quote::quote;
-use quote::ToTokens;
+
 use std::collections::HashMap;
-use syn::parse::{Parse, ParseStream};
-use syn::punctuated::Punctuated;
-use syn::visit::visit_item_mod;
-use syn::{
-    parse_str, ExprLit, File, Generics, Ident, Item, ItemFn, ItemImpl, Lifetime, LitFloat, LitInt,
-    LitStr, Path, PathSegment, Token, Type, TypePath,
-};
+
+use orchestrator::prelude::ExerciseDef;
+use quote::{quote, ToTokens};
 
 use syn::{
-    parse::Parser,
-    visit::{visit_file, Visit},
-    Attribute, Expr, Lit, Meta,
+    parse::{Parse, ParseStream, Parser},
+    punctuated::Punctuated,
+    token::PathSep,
+    visit::{visit_file, visit_item_mod, Visit},
+};
+use syn::{
+    parse_str, Attribute, Expr, ExprLit, File, Generics, Ident, Item, ItemFn, ItemImpl, Lifetime,
+    Lit, LitFloat, LitInt, LitStr, Meta, Path, PathSegment, Token, Type, TypePath,
 };
 
 use super::error::RustError;
+use super::test_definition::SendableTestDefinition;
+use super::test_definition::UnfinishedTestDefinition;
 /// impl trait for type <in path> IGNORED GENERICS, not supported yet
 ///
 /// the only way to implement on strange type is throught a trait?
@@ -27,29 +28,53 @@ use super::error::RustError;
 #[derive(Debug, Eq, Hash, Clone)]
 pub struct ImplementationPath {
     generics: Generics,
-    type_: Type,
+    pub(crate) type_: Type,
     trait_: Option<Path>,
-    pub path: Option<Punctuated<PathSegment, Token![::]>>,
+    pub path: Punctuated<PathSegment, Token![::]>,
 }
 impl ToTokens for ImplementationPath {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
         let generics = &self.generics;
         let trait_ = self.trait_.as_ref().map(|x| quote! {#x for});
         let type_ = &self.type_;
-        let path = self.path.as_ref().map(|x| quote! {in #x});
+        let path = &self.path;
+        let path = if !path.is_empty() {
+            Some(quote! {in #path})
+        } else {
+            None
+        };
+
         let t = quote! {impl #generics #trait_ #type_ #path};
 
         tokens.extend(t);
     }
 }
 
-impl From<&ItemImpl> for ImplementationPath {
-    fn from(value: &ItemImpl) -> Self {
+impl ImplementationPath {
+    pub fn from_impl(value: &ItemImpl, path: &Punctuated<PathSegment, PathSep>) -> Self {
         ImplementationPath {
             generics: value.generics.clone(),
             type_: *value.self_ty.clone(),
             trait_: value.trait_.as_ref().map(|(_, path, _)| path).cloned(),
-            path: None,
+            path: path.clone(),
+        }
+    }
+    pub fn from_fn(value: &ItemFn, path: &Punctuated<PathSegment, PathSep>) -> Self {
+        let mut type_ = Punctuated::new();
+        type_.push(value.sig.ident.clone().into());
+        let type_ = TypePath {
+            qself: None,
+            path: Path {
+                leading_colon: None,
+                segments: type_,
+            },
+        }
+        .into();
+        ImplementationPath {
+            generics: Generics::default(),
+            type_,
+            trait_: None,
+            path: path.clone(),
         }
     }
 }
@@ -59,7 +84,6 @@ impl Parse for ImplementationPath {
         input.parse::<Token![impl]>()?;
         let mut type_ = input.parse::<Type>()?;
         let mut trait_ = None;
-        let mut path = None;
 
         let has_generics = input.peek(Token![<])
             && (input.peek2(Token![>])
@@ -92,10 +116,12 @@ impl Parse for ImplementationPath {
             }
             type_ = input.parse::<Type>()?;
         }
-        if input.peek(Token![in]) {
+        let path = if input.peek(Token![in]) {
             input.parse::<Token![in]>()?;
-            path = Some(input.parse::<Path>()?.segments);
-        }
+            input.parse::<Path>()?.segments
+        } else {
+            Punctuated::new()
+        };
 
         Ok(ImplementationPath {
             generics,
@@ -110,36 +136,6 @@ impl PartialEq for ImplementationPath {
         self.type_ == other.type_ && self.trait_ == other.trait_ && self.path == other.path
     }
 }
-#[derive(Debug, Clone)]
-pub struct UnfinishedTestDefinition {
-    to_overwrite: Vec<ImplementationPath>,
-    test: ItemFn,
-    description: String,
-    points: f32,
-}
-impl UnfinishedTestDefinition {
-    pub fn finish(
-        self,
-        default_impl: &HashMap<ImplementationPath, Item>,
-    ) -> Result<TestDefinition, RustError> {
-        let to_overwrite = self
-            .to_overwrite
-            .into_iter()
-            .map(|o| {
-                default_impl
-                    .get(&o)
-                    .map(|x| (o.clone(), x.clone()))
-                    .ok_or(RustError::MatchNotFound(format!("{:?}", o)))
-            })
-            .collect::<Result<_, RustError>>()?;
-        Ok(TestDefinition {
-            to_overwrite,
-            test: self.test,
-            description: self.description,
-            points: self.points,
-        })
-    }
-}
 
 #[derive(Default, Debug)]
 pub struct Visiter {
@@ -149,58 +145,6 @@ pub struct Visiter {
     tests: Vec<UnfinishedTestDefinition>,
     /// store the default implementations. the key is PaUseTreeth, optional Trait.
     default_impls: HashMap<ImplementationPath, Item>,
-}
-
-pub struct TestDefinition {
-    pub(crate) to_overwrite: HashMap<ImplementationPath, Item>,
-    pub(crate)test: ItemFn,
-    pub(crate)description: String,
-    pub(crate)points: f32,
-}
-#[derive(Clone)]
-pub struct SendableTestDefinition {
-    name: String,
-    to_overwrite: HashMap<String, String>,
-    test: String,
-    description: String,
-    points: f32,
-}
-impl From<TestDefinition> for SendableTestDefinition {
-    fn from(value: TestDefinition) -> Self {
-        let name = value.test.sig.ident.to_string();
-        Self {
-            name,
-            to_overwrite: value
-                .to_overwrite
-                .into_iter()
-                .map(|(a, b)| {
-                    (
-                        a.to_token_stream().to_string(),
-                        b.to_token_stream().to_string(),
-                    )
-                })
-                .collect(),
-            test: value.test.to_token_stream().to_string(),
-            description: value.description,
-            points: value.points,
-        }
-    }
-}
-impl TryFrom<SendableTestDefinition> for TestDefinition {
-    fn try_from(value: SendableTestDefinition) -> Result<Self, RustError> {
-        Ok(Self {
-            to_overwrite: value
-                .to_overwrite
-                .into_iter()
-                .map(|(a, b)| Ok((parse_str(&a)?, parse_str(&b)?)))
-                .collect::<Result<HashMap<ImplementationPath, Item>, RustError>>()?,
-            test: parse_str::<ItemFn>(&value.test)?,
-            description: value.description,
-            points: value.points,
-        })
-    }
-
-    type Error = RustError;
 }
 
 #[derive(Clone, Default)]
@@ -297,7 +241,7 @@ fn extract_dependencies<'a>(value: impl Iterator<Item = &'a Attribute>) -> Vec<S
         .collect()
 }
 
-fn extract_fn(func: &ItemFn) -> Option<UnfinishedTestDefinition> {
+pub fn extract_fn(func: &ItemFn) -> Option<UnfinishedTestDefinition> {
     let description = extract_documentation(func.attrs.iter()).unwrap_or(String::new());
     let points = func
         .attrs
@@ -336,7 +280,9 @@ fn extract_fn(func: &ItemFn) -> Option<UnfinishedTestDefinition> {
             attribute.parse_args().ok()
         })
         .collect();
-
+    let mut test = func.clone();
+    test.attrs
+        .retain(|x| !x.path().is_ident("overwrite") && !x.path().is_ident("runtest"));
     Some(UnfinishedTestDefinition {
         to_overwrite,
         test: func.clone(),
@@ -380,16 +326,14 @@ impl<'a> Visit<'a> for Visiter {
     fn visit_item_impl(&mut self, i: &'a syn::ItemImpl) {
         if i.trait_.is_some() {
             // can't split
-            let mut key: ImplementationPath = i.into();
-            key.path = Some(self.mod_path.clone());
+            let key = ImplementationPath::from_impl(i, &self.mod_path);
             self.default_impls.insert(key, i.clone().into());
         }
         for item in &i.items {
             let mut implementation_skelethon = i.clone();
             match item {
                 syn::ImplItem::Const(impl_item_const) => {
-                    let mut key: ImplementationPath = i.into();
-                    key.path = Some(self.mod_path.clone());
+                    let mut key = ImplementationPath::from_impl(i, &self.mod_path);
                     // assuming that only path inherent type can be overloaded
                     if let Type::Path(p) = &mut key.type_ {
                         p.path.segments.push(impl_item_const.ident.clone().into());
@@ -399,8 +343,8 @@ impl<'a> Visit<'a> for Visiter {
                     }
                 }
                 syn::ImplItem::Fn(impl_item_fn) => {
-                    let mut key: ImplementationPath = i.into();
-                    key.path = Some(self.mod_path.clone());
+                    let mut key = ImplementationPath::from_impl(i, &self.mod_path);
+                    key.path = self.mod_path.clone();
                     // assuming that only path inherent type can be overloaded
                     if let Type::Path(p) = &mut key.type_ {
                         p.path.segments.push(impl_item_fn.sig.ident.clone().into());
@@ -418,27 +362,7 @@ impl<'a> Visit<'a> for Visiter {
         if extract_fn(i).is_some() {
             return;
         }
-        let mut type_ = Punctuated::new();
-        type_.push(i.sig.ident.clone().into());
-        let type_ = TypePath {
-            qself: None,
-            path: Path {
-                leading_colon: None,
-                segments: type_,
-            },
-        }
-        .into();
-        let path = if !self.mod_path.is_empty() {
-            Some(self.mod_path.clone())
-        } else {
-            None
-        };
-        let key = ImplementationPath {
-            generics: Generics::default(),
-            type_,
-            trait_: None,
-            path,
-        };
+        let key = ImplementationPath::from_fn(i, &self.mod_path);
         self.default_impls.insert(key, i.clone().into());
     }
 }
@@ -521,7 +445,7 @@ mod tests {
                 },
             }),
             trait_: None,
-            path: None,
+            path: Punctuated::new(),
         };
         let function = syn::parse2(quote! {fn bigger(a: i32, b:i32)->i32{
             if(a>b){
