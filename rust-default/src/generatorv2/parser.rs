@@ -147,7 +147,7 @@ pub struct Visiter {
     default_impls: HashMap<ImplementationPath, Item>,
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct RustExercise {
     original: String,
     pub dependencies: Vec<String>,
@@ -285,7 +285,7 @@ pub fn extract_fn(func: &ItemFn) -> Option<UnfinishedTestDefinition> {
         .retain(|x| !x.path().is_ident("overwrite") && !x.path().is_ident("runtest"));
     Some(UnfinishedTestDefinition {
         to_overwrite,
-        test: func.clone(),
+        test,
         description,
         points,
     })
@@ -321,6 +321,7 @@ impl<'a> Visit<'a> for Visiter {
 
         // pop name from mod_path
         self.mod_path.pop();
+        self.mod_path.pop_punct();
     }
     /// get impl
     fn visit_item_impl(&mut self, i: &'a syn::ItemImpl) {

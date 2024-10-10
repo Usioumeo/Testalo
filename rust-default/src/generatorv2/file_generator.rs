@@ -12,13 +12,13 @@ use super::test_definition::TestDefinition;
 use super::error::RustError;
 use super::parser::{extract_fn, ImplementationPath, RustExercise};
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct GeneratedFiles {
     pub(crate) files: HashMap<String, String>,
 }
 
 impl GeneratedFiles {
-    pub fn generated(def: RustExercise, user: String) -> Result<Self, RustError> {
+    pub fn generate(def: RustExercise, user: String) -> Result<Self, RustError> {
         let user: File = parse_str(&user)?;
 
         let tests: Vec<TestDefinition> = def
@@ -125,6 +125,8 @@ impl Fold for Substitute {
         } else {
             module.content = Some((Brace::default(), t));
         }
+        self.mod_path.pop();
+        self.mod_path.pop_punct();
         module
     }
 
@@ -211,6 +213,52 @@ impl Fold for Substitute {
                 }
             });
             i
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests{
+    use crate::prelude::{GeneratedFiles2, RustExercise2};
+
+    #[test]
+    fn check_file_generator(){
+        use quote::quote;
+        let q = quote! {
+            //! test comment
+            #![dependency("rand=0.1")]
+            
+
+            #[runtest()]
+            #[overwrite(impl point_me in hidden::hidden2)]
+            /// comment
+            fn test_1(){
+                use rand;
+                ///magic test
+                struct lol;
+            }
+
+            mod hidden{
+                mod hidden2{
+                    fn point_me(){}
+                }
+                struct Dummy;
+                impl Dummy{
+                    fn print(){}
+                }
+            }
+
+            #[runtest(1.0)]
+            #[overwrite(impl Dummy::print in hidden)]
+            fn test_2(){
+
+            }
+        };
+        let q = q.to_string();
+        let t = RustExercise2::parse(&q).unwrap();
+        let res = GeneratedFiles2::generate(t, "".to_string()).unwrap();
+        for (name, file) in res.files{
+            println!("{name}:\n{file}\n\n\n\n");
         }
     }
 }

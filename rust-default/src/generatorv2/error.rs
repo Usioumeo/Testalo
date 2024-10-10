@@ -5,6 +5,6 @@ pub enum RustError {
     #[error("Parsing Error while parsing file: {:?} {}", &.0.span().start(), .0)]
     ParsingError(#[from] syn::Error),
 
-    #[error("matching default implementation not found")]
+    #[error("matching default implementation not found: {0}")]
     MatchNotFound(String),
 }

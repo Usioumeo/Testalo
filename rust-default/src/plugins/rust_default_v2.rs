@@ -28,7 +28,7 @@ where
         Ok(t)
     };
     let f2 = |def: RustExercise2, source: String| async move {
-        Ok(GeneratedFiles2::generated(def, source)?)
+        Ok(GeneratedFiles2::generate(def, source)?)
     };
     o.add_exercise_generators(f1, f2).await;
     Ok(())

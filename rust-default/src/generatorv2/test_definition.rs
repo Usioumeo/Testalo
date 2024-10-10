@@ -13,7 +13,7 @@ pub struct TestDefinition {
     pub(crate) points: f32,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SendableTestDefinition {
     pub(crate) name: String,
     pub(crate) to_overwrite: HashMap<String, String>,
@@ -72,6 +72,7 @@ impl UnfinishedTestDefinition {
         self,
         default_impl: &HashMap<ImplementationPath, Item>,
     ) -> Result<TestDefinition, RustError> {
+        let all = default_impl.keys().map(|x| x.to_token_stream().to_string()).fold(String::new(), |a, b| a+"\n"+&b);
         let to_overwrite = self
             .to_overwrite
             .into_iter()
@@ -79,7 +80,7 @@ impl UnfinishedTestDefinition {
                 default_impl
                     .get(&o)
                     .map(|x| (o.clone(), x.clone()))
-                    .ok_or(RustError::MatchNotFound(format!("{:?}", o)))
+                    .ok_or(RustError::MatchNotFound(format!("Not found: {}\n but instead found:\n {}", o.to_token_stream().to_string(), all)))
             })
             .collect::<Result<_, RustError>>()?;
         Ok(TestDefinition {
