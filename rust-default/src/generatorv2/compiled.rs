@@ -1,4 +1,4 @@
-use std::{collections::HashMap, hash::Hash, path::{Path, PathBuf}, string::FromUtf8Error};
+use std::{collections::HashMap, path::{Path, PathBuf}, string::FromUtf8Error};
 
 use dircpy::copy_dir;
 use orchestrator::prelude::{AsyncDefault, CompilationResult, RunResult, TestResult};
@@ -124,7 +124,8 @@ impl RustCompiled {
         //generate crate
         create_cargo_project(&path, generated.dependencies.as_slice()).await?;
 
-        for (name, (content, points)) in &generated.files {
+        for (name, (content, _)) in &generated.files {
+            
             fs::write(
                 path.join("src").join("bin").join(name.clone() + ".rs"),
                 content,

@@ -80,7 +80,7 @@ impl UnfinishedTestDefinition {
                 default_impl
                     .get(&o)
                     .map(|x| (o.clone(), x.clone()))
-                    .ok_or(RustError::MatchNotFound(format!("Not found: {}\n but instead found:\n {}", o.to_token_stream().to_string(), all)))
+                    .ok_or(RustError::MatchNotFound(format!("Not found: {}\n but instead found:\n {}", o.to_token_stream(), all)))
             })
             .collect::<Result<_, RustError>>()?;
         Ok(TestDefinition {

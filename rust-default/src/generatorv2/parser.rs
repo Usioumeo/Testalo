@@ -25,6 +25,7 @@ use super::test_definition::UnfinishedTestDefinition;
 ///
 /// the only way to implement on strange type is throught a trait?
 ///
+#[allow(clippy::derived_hash_with_manual_eq)]
 #[derive(Debug, Eq, Hash, Clone)]
 pub struct ImplementationPath {
     generics: Generics,
