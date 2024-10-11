@@ -3,8 +3,7 @@ use std::{
     path::{Path, PathBuf},
     string::FromUtf8Error,
 };
-
-use dircpy::copy_dir;
+use copy_dir::copy_dir;
 use orchestrator::{
     executor::AsyncDefault,
     prelude::{CompilationResult, RunResult, TestResult},

@@ -1,6 +1,5 @@
 use std::{collections::HashMap, path::{Path, PathBuf}, string::FromUtf8Error};
-
-use dircpy::copy_dir;
+use copy_dir::copy_dir;
 use orchestrator::prelude::{AsyncDefault, CompilationResult, RunResult, TestResult};
 use serde_json::Value;
 use tempdir::TempDir;
