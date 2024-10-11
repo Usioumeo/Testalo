@@ -8,5 +8,3 @@ lto="off"
 incremental = false
 opt-level = 0
 debug =  false
-
-[dependencies]

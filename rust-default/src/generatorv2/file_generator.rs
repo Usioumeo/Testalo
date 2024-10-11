@@ -14,7 +14,7 @@ use super::parser::{extract_fn, ImplementationPath, RustExercise};
 
 #[derive(Clone, Default, Debug)]
 pub struct GeneratedFiles {
-    pub(crate) files: HashMap<String, (String, f32)>,
+    pub files: HashMap<String, (String, f32)>,
     pub(crate) dependencies: Vec<String>,
 }
 

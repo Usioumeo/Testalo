@@ -1,5 +1,5 @@
 [workspace]
-members = ["orchestrator", "rust-default", "backend", "sql-abstractor", "load-test", ]
+members = ["orchestrator", "rust-default", "backend", "sql-abstractor", "load-test", "procedural", ]
 
 resolver="2"
 exclude = ["execution_test",  "student_delivery", "backend/frontend", "procedural-macros"]
