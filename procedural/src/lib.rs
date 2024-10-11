@@ -1,5 +1,5 @@
 use proc_macro::TokenStream;
-use syn::{fold::Fold, parse, parse_quote, parse_str, File, Ident, ItemMod};
+use syn::{fold::Fold, parse, parse_quote, parse_str, token::Brace, File, Ident, ItemMod};
 use rust_default::prelude::*;
 use quote::{format_ident, ToTokens};
 
@@ -19,22 +19,28 @@ impl Fold for Sanitizer{
 #[proc_macro_attribute]
 pub fn magic_macro(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let input: ItemMod = parse(item).unwrap();
-    let input = input.content.map(|(_, a)| a).unwrap_or(Vec::new());
+    let mut ret = input.clone();
+    let input_content = input.content.map(|(_, a)| a).unwrap_or(Vec::new());
     let file = File{
         shebang: None,
-        attrs: Vec::new(),
-        items: input,
+        attrs: input.attrs,
+        items: input_content,
     };
 
     let input = file.to_token_stream().to_string();
     let ex = RustExercise2::parse(&input).unwrap();
     let test = GeneratedFiles2::generate(ex, input).unwrap();
-    let mut file = File{
+    /*let mut file = File{
         shebang: None,
         attrs: Vec::new(),
         items: Vec::new(),
-    };
-    
+    };*/
+    if ret.content.is_none(){
+        ret.content = Some((Brace::default(), Vec::new()));
+    }else{
+        ret.content.as_mut().unwrap().1.clear();
+    }
+    let ret_item = ret.content.as_mut().map(|(_, a)| a).unwrap();
     for (name, (content, _)) in test.files{
         let name = format_ident!("{}", name);
         let content: File = parse_str(&content).unwrap();
@@ -42,12 +48,13 @@ pub fn magic_macro(_attr: TokenStream, item: TokenStream) -> TokenStream {
         let module: ItemMod = parse_quote! {mod #name {
             #content
         }};
-        file.items.push(module.into());
+        ret_item.push(module.into());
         
     }
+    ret.attrs.clear();
 
     let mut s = Sanitizer{};
-    let file = s.fold_file(file);
+    let ret = s.fold_item_mod(ret);
 
-    file.into_token_stream().into()
+    ret.into_token_stream().into()
 }

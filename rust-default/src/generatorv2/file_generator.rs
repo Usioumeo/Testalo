@@ -5,7 +5,7 @@ use quote::quote;
 use syn::fold::{fold_file, fold_item_mod, Fold};
 use syn::punctuated::Punctuated;
 use syn::token::{Brace, PathSep};
-use syn::{parse2, parse_str, File, Ident, Item, ItemMod, PathSegment, Token, Type};
+use syn::{parse2, parse_quote, parse_str, File, Ident, Item, ItemMod, Path, PathSegment, Token, Type};
 
 use super::test_definition::TestDefinition;
 
@@ -142,6 +142,8 @@ impl Fold for Substitute {
     }
     fn fold_file(&mut self, mut i: syn::File) -> syn::File {
         i.attrs.retain(|x| !x.path().is_ident("dependency"));
+        let path: Path = parse_quote!(procedural::magic_macro);
+        i.attrs.retain(|x| *x.path()!=path);
         // removed the attributed function
         i.items.retain(|x| {
             if let Item::Fn(x) = &x {
