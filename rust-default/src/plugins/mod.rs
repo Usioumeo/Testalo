@@ -1,9 +1,12 @@
 //! Contains Plugin definitions
 
+#[cfg(feature="cli")]
 pub(crate) mod cli;
+#[cfg(feature="cli")]
 pub(crate) mod cli_v2;
 pub(crate) mod rust_default;
 pub(crate) mod rust_default_v2;
+#[cfg(feature="cli")]
 pub(crate) mod stateless;
 
 /*//TODO ADD DOCKER

@@ -13,8 +13,12 @@ pub(crate) mod plugins;
 mod test;
 
 pub use crate::generator::{RustCompiled, RustExercise, RustGeneratedFiles};
+
+pub use crate::plugins::{rust_default::RustDefaultPlugin};
+#[cfg(feature="cli")]
 pub use crate::plugins::{
-    cli_v2::CLIPlugin, rust_default::RustDefaultPlugin, stateless::StatelessCLIPlugin,
+    
+    cli_v2::CLIPlugin, stateless::StatelessCLIPlugin,
 };
 
 pub mod prelude;
