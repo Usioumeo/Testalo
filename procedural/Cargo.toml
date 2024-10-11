@@ -11,4 +11,7 @@ syn={version="2.0", features = ["parsing", "printing", "clone-impls", "visit", "
 rust-default={path="../rust-default"}
 quote="1.0"
 prettyplease = "0.2"
+
+
+[dev-dependencies]
 oorandom="11.0"
