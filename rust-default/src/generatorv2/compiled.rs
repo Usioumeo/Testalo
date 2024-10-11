@@ -32,13 +32,12 @@ pub struct RustCompiled {
 }
 impl AsyncDefault for RustCompiled{
     async fn async_default() -> Self {
-        let mut files = HashMap::new();
-        files.insert("test1".to_string(), ("fn main(){}".to_string(), 1.0));
-        let files = GeneratedFiles{
-            files,
-            dependencies: Vec::new(),
-        };
-        RustCompiled::compile(files, None).await.unwrap()
+        // TODO not a real implementation
+        RustCompiled{
+            _tmpdir: None,
+            path: PathBuf::new(),
+            results: HashMap::new(),
+        }
     }
 }
 

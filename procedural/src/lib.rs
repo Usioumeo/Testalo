@@ -30,17 +30,18 @@ pub fn magic_macro(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let input = file.to_token_stream().to_string();
     let ex = RustExercise2::parse(&input).unwrap();
     let test = GeneratedFiles2::generate(ex, input).unwrap();
-    /*let mut file = File{
-        shebang: None,
-        attrs: Vec::new(),
-        items: Vec::new(),
-    };*/
+
+
+    
     if ret.content.is_none(){
         ret.content = Some((Brace::default(), Vec::new()));
     }else{
         ret.content.as_mut().unwrap().1.clear();
     }
     let ret_item = ret.content.as_mut().map(|(_, a)| a).unwrap();
+
+
+
     for (name, (content, _)) in test.files{
         let name = format_ident!("{}", name);
         let content: File = parse_str(&content).unwrap();
