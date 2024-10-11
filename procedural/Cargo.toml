@@ -8,7 +8,7 @@ proc-macro = true
 
 [dependencies]
 syn={version="2.0", features = ["parsing", "printing", "clone-impls", "extra-traits", "fold"], default-features=false}
-rust-default={path="../rust-default"}
+rust-default={path="../rust-default", default-features = false}
 quote="1.0"
 prettyplease = "0.2"
 
